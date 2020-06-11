@@ -4,6 +4,10 @@
 [submodule "external/esp32-toolchain"]
 	path = external/esp32-toolchain
 	url = https://github.com/sturmgans/esp32-toolchain
-[submodule "external/amazon-freertos"]
-	path = external/amazon-freertos
-	url = https://github.com/aws/amazon-freertos
+[submodule "external/freertos"]
+	path = external/freertos
+	url = https://github.com/aws/amazon-freertos.git
+	branch = release
+[submodule "external/esp-idf"]
+	path = external/esp-idf
+	url = https://github.com/espressif/esp-idf.git

@@ -1,7 +1,7 @@
-# esp32-aws-cam
+# FSU-Eye
 
-This project should run an ESP32, connect to AWS and upload images taken with its camera
-
+Frellie-Sees-You is a home survelleince project, intended to surveil your home with cameras.
+This project part implements the Eye unit (imagination!) controllong the camera. It runs on a ESP32, connects to AWS and uploads images taken with its camera.
 
 ## Prerequsites
 
