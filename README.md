@@ -5,9 +5,18 @@ This project part implements the Eye unit (imagination!) controllong the camera.
 
 ## Prerequsites
 
+The following are confirmed working versions
+
 - CMAKE 3.13 or higher
-- Python 2.7.10 or higher
-- AWS Cli
+- Python 3.8.2 or higher
+- AWS Cli 2
+- Ninja 1.10.0
+
+Python 2.7 should work, but if using Ubuntu 20.04 pip is no longer available, causing issues. This can be solved by ensuring Python3 is invoked through 'python' calls from PATH.
+
+When running under Linux it may be required to symlink 'ninja' to 'ninja-build'.
+
+### Notes
 
 This project is based on AWS Demo Application, for more detailed prerequisite description please visit:
 https://docs.aws.amazon.com/freertos/latest/userguide/getting_started_espressif.html
@@ -15,12 +24,14 @@ https://docs.aws.amazon.com/freertos/latest/userguide/getting_started_espressif.
 ## Initialization
 
 ```bash
-    git clone https://github.com/sturmgans/esp32-aws-cam esp32-aws-cam
-    cd esp32-aws-cam
     git submodule init
     git submodule update
 ```
 
 ## Build
 
-WIP
+The provided bash script can be used to build on Linux
+
+```
+./build.sh
+```

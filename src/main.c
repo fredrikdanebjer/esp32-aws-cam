@@ -1,6 +1,8 @@
+// TODO: Add license
+
 #include <stdio.h>
 
-void app_main(void)
+void app_main()
 {
-  printf("Hello\r\n");
+    printf("Hello from FSU-Eye!\n");
 }

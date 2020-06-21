@@ -1,17 +1,25 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(FSU-Eye)
+set(PROJECT_NAME "FSU-Eye")
 
-add_executable(app src/main.c)
+project(${PROJECT_NAME})
+
+# Add primary entry-point
+add_executable(${PROJECT_NAME}
+  src/main.c
+)
 
 # Tell IDF build to link against this target.
-set(IDF_PROJECT_EXECUTABLE app)
+set(IDF_PROJECT_EXECUTABLE ${PROJECT_NAME})
 
-# Add FreeRTOS as a subdirectory. AFR_BOARD tells which board to target.
+# Add subdirectories. AFR_BOARD tells which board to target.
 set(AFR_BOARD espressif.esp32_devkitc CACHE INTERNAL "")
 add_subdirectory(external/freertos)
+add_subdirectory(src)
 
-# Link against the mqtt library so that we can use it. Dependencies are transitively
-# linked.
-target_link_libraries(app PRIVATE AFR::mqtt)
-
+# Link against modules
+target_link_libraries(${PROJECT_NAME}
+  PRIVATE
+  fsu_eye_freertos
+  AFR::mqtt
+)
