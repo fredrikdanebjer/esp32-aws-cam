@@ -1,7 +1,7 @@
 # FSU-Eye
 
-Frellie-Sees-You is a home survelleince project, intended to surveil your home with cameras.
-This project part implements the Eye unit (imagination!) controllong the camera. It runs on a ESP32, connects to AWS and uploads images taken with its camera.
+Frellie-Sees-yoU is a home survelleince project, intended to surveil your home with cameras.
+This project-part implements the Eye unit (imagination!) controllong the camera. It runs on a ESP32, connects to AWS and uploads images taken with its camera.
 
 ## Prerequsites
 
@@ -68,7 +68,7 @@ Once the physical connection is setup you can flash using the provided bash scri
 
 ## Versioning
 
-Git Tags are used in order to keep some kind of versioning of milestones. The format is  <MAJOR>.<MINOR>. Example on how to create and push a tag:
+Git Tags are used in order to keep some kind of versioning of milestones. The format is  `<MAJOR>.<MINOR>`. Example on how to create and push a tag:
 
 git tag -a 0.1 -m "Hello World!"
 
