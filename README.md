@@ -35,20 +35,43 @@ The provided bash script can be used to build on Linux
 ./build.sh
 ```
 
-## Flashing
+## ESP32 Physical Connection
 
-### ESP32 Physical Connection
+The physical connection to the ESP32-S can be done by connecting over UART using 3V3 logic, and powering it up with 5V. NOTE: During flashing the the pin IO0 needs to be connected to GND.
 
-In order to flash the ESP32 you will need to connect to the ESP32 over UART, as well as powering it up with 3V3.
+The pin connections to UART can be summarized as:
+| ESP32-S | UART 3V3 Logic |
+|---------|----------------|
+|   GND   |      GND       |
+|   U0R   |      TX        |
+|   U0T   |      RX        |
 
-The ESP32 UART pinout is as follows:
+In addition the power supply needs to connect:
 
-ESP32 UART GND GND U0T RX U0R TX
+| ESP32-S |  Power Supply |
+|---------|---------------|
+|   5V    |     5VGND     |
 
-### Flash Script
+### Flashing
+
+When flashing IO0 needs also to be connected to GND.
+
+| ESP32-S | ESP32-S |
+|---------|---------|
+|   IO0   |   GND   |
 
 Once the physical connection is setup you can flash using the provided bash script in the following way:
 
 ```
 ./build.sh flash
 ```
+
+## Versioning
+
+Git Tags are used in order to keep some kind of versioning of milestones. The format is  <MAJOR>.<MINOR>. Example on how to create and push a tag:
+
+git tag -a 0.1 -m "Hello World!"
+
+Once the tag is created it can be pushed to origin:
+
+git push origin --tags
