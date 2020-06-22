@@ -25,8 +25,18 @@
 */
 
 #include <stdio.h>
+#include <stdint.h>
+#include "xtensa/core-macros.h"
 
 void app_main()
 {
+  uint32_t last_time = XTHAL_GET_CCOUNT();
+
+  while (1)
+  {
+    while (XTHAL_GET_CCOUNT() - last_time < 10000);
+    last_time = XTHAL_GET_CCOUNT();
     printf("Hello from FSU-Eye!\n");
+  }
+
 }

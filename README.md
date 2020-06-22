@@ -66,6 +66,16 @@ Once the physical connection is setup you can flash using the provided bash scri
 ./build.sh flash
 ```
 
+### Monitor
+
+The device can be monitored from a HOST PC with the above explained physical connection. It is important that if the device was just flashed, the IO0 pin is disconnected from GND and the ESP32-S then reset.
+
+The provided build.sh implements a wrapper for the monitor functionality. It is by default hardcoded to run on ttyUSB0, you may need to adjust this on your setup.
+To monitor the device you can run the provided bash script in the following way:
+```
+./build.sh monitor
+```
+
 ## Versioning
 
 Git Tags are used in order to keep some kind of versioning of milestones. The format is  `<MAJOR>.<MINOR>`. Example on how to create and push a tag:
