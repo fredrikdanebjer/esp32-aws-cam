@@ -24,8 +24,7 @@ https://docs.aws.amazon.com/freertos/latest/userguide/getting_started_espressif.
 ## Initialization
 
 ```bash
-    git submodule init
-    git submodule update
+    git submodule update --init --recursive
 ```
 
 ## Build
@@ -34,4 +33,22 @@ The provided bash script can be used to build on Linux
 
 ```
 ./build.sh
+```
+
+## Flashing
+
+### ESP32 Physical Connection
+
+In order to flash the ESP32 you will need to connect to the ESP32 over UART, as well as powering it up with 3V3.
+
+The ESP32 UART pinout is as follows:
+
+ESP32 UART GND GND U0T RX U0R TX
+
+### Flash Script
+
+Once the physical connection is setup you can flash using the provided bash script in the following way:
+
+```
+./build.sh flash
 ```
