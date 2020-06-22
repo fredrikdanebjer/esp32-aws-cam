@@ -24,7 +24,11 @@
 * THE SOFTWARE.
 */
 
-void vApplicationGetIdleTaskMemory(void)
+#include <FreeRTOS.h>
+
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
+                                    StackType_t **ppxIdleTaskStackBuffer,
+                                    uint32_t *pulIdleTaskStackSize )
 {
   /* If the buffers to be provided to the Idle task are declared inside this
    * function then they must be declared static - otherwise they will be allocated on
@@ -57,7 +61,9 @@ void IRAM_ATTR vApplicationTickHook()
     esp_vApplicationTickHook();
 }
 
-void vApplicationGetTimerTaskMemory(void)
+void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer,
+                                     StackType_t **ppxTimerTaskStackBuffer,
+                                     uint32_t *pulTimerTaskStackSize )
 {
   /* If the buffers to be provided to the Timer task are declared inside this
    * function then they must be declared static - otherwise they will be allocated on

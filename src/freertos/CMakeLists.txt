@@ -13,4 +13,5 @@ target_compile_features(fsu_eye_freertos
 
 target_link_libraries(fsu_eye_freertos
   PRIVATE
+  AFR::kernel
   )
