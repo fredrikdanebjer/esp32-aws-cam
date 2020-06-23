@@ -35,6 +35,16 @@ The provided bash script can be used to build on Linux
 ./build.sh
 ```
 
+## Hardware
+
+This project uses an ESP32-CAM with an OV2640 Camera. Example pictures can be seen below
+
+![ESP32-CAM Front](/images/esp32-s_front.jpg)
+![ESP32-CAM Back](/images/esp32-s_back_described.jpg)
+
+NOTE: The pinout description on the board is on the reveresed side of the pins, which is why the handy pinout is written in the images.
+
+
 ## ESP32 Physical Connection
 
 The physical connection to the ESP32-S can be done by connecting over UART using 3V3 logic, and powering it up with 5V. NOTE: During flashing the the pin IO0 needs to be connected to GND.
@@ -50,7 +60,7 @@ In addition the power supply needs to connect:
 
 | ESP32-S |  Power Supply |
 |---------|---------------|
-|   5V    |     5VGND     |
+|   5V    |       5V      |
 
 ### Flashing
 
@@ -59,6 +69,9 @@ When flashing IO0 needs also to be connected to GND.
 | ESP32-S | ESP32-S |
 |---------|---------|
 |   IO0   |   GND   |
+
+An example picture of a connected device in flash mode can be seen below.
+![ESP32-CAM Connected Flash Mode](/images/esp32-s_flash_connector_described.jpg)
 
 Once the physical connection is setup you can flash using the provided bash script in the following way:
 
@@ -85,3 +98,7 @@ git tag -a 0.1 -m "Hello World!"
 Once the tag is created it can be pushed to origin:
 
 git push origin --tags
+
+## Useful Links
+
+https://randomnerdtutorials.com/esp32-cam-video-streaming-face-recognition-arduino-ide/
