@@ -25,4 +25,5 @@ else
   echo "Unknown command! Usage:"
   echo "./build.sh          - compile"
   echo "./build.sh flash    - flash"
+  echo "./build.sh monitor  - monitor output"
 fi
