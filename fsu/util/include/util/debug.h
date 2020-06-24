@@ -1,5 +1,5 @@
 /*
-* @file main.c
+* @file debug.h
 *
 * The MIT License (MIT)
 *
@@ -24,19 +24,23 @@
 * THE SOFTWARE.
 */
 
-#include <stdint.h>
-#include "util/debug.h"
-#include "xtensa/core-macros.h"
+#ifndef DEBUG_H
+#define DEBUG_H
 
-// Application entry-point
-void app_main()
-{
-  uint32_t last_time = XTHAL_GET_CCOUNT();
+typedef enum {
+  DEBUG_emer = 0,
+  DEBUG_warn,
+  DEBUG_info,
+  DEBUG_count,
+} DEBUG_level_t;
 
-  while (1)
-  {
-    while (XTHAL_GET_CCOUNT() - last_time < 10000000);
-    last_time = XTHAL_GET_CCOUNT();
-    DEBUG_print(DEBUG_info, "Hello from FSU Eye\n");
-  }
-}
+/*
+* @brief Prints a string if level is less or equal to DEBUG_PRINT_LEVEL. This
+* function is a wrapper of printf with priority setting.
+* @param level defines what priority this message has
+* @param format string formatter
+* @param ... arguments
+*/
+void DEBUG_print(DEBUG_level_t level, const char* format, ...);
+
+#endif // DEBUG_H

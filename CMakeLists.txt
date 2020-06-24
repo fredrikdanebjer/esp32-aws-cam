@@ -4,6 +4,11 @@ set(PROJECT_NAME "FSU-Eye")
 
 project(${PROJECT_NAME})
 
+# Set Debug Level
+IF (DEFINED _DEBUG_PRINT_LEVEL)
+  ADD_DEFINITIONS(-DDEBUG_PRINT_LEVEL=${_DEBUG_PRINT_LEVEL})
+ENDIF()
+
 # Add primary entry-point
 add_executable(${PROJECT_NAME}
   fsu/src/main.c
@@ -22,4 +27,5 @@ target_link_libraries(${PROJECT_NAME}
   PRIVATE
   fsu_eye_freertos
   AFR::mqtt
+  util
 )
