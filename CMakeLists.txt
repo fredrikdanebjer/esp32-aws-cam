@@ -6,7 +6,7 @@ project(${PROJECT_NAME})
 
 # Add primary entry-point
 add_executable(${PROJECT_NAME}
-  src/main.c
+  fsu/src/main.c
 )
 
 # Tell IDF build to link against this target.
@@ -15,7 +15,7 @@ set(IDF_PROJECT_EXECUTABLE ${PROJECT_NAME})
 # Add subdirectories. AFR_BOARD tells which board to target.
 set(AFR_BOARD espressif.esp32_devkitc CACHE INTERNAL "")
 add_subdirectory(external/freertos)
-add_subdirectory(src)
+add_subdirectory(fsu)
 
 # Link against modules
 target_link_libraries(${PROJECT_NAME}
