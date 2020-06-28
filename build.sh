@@ -27,10 +27,13 @@ elif [[ $# -eq 1 ]] && [[ $1 = "flash" ]]; then
 elif [[ $# -eq 1 ]] && [[ $1 = "monitor" ]]; then
   echo "Trying to monitor with device ${MONITOR_DEVICE}. If your connection is using another device, please change in script"
   ./external/freertos/vendors/espressif/esp-idf/tools/idf.py monitor -p ${MONITOR_DEVICE} -B build
+elif [[ $# -eq 1 ]] && [[ $1 = "menuconfig" ]]; then
+  external/freertos/vendors/espressif/esp-idf/tools/idf.py menuconfig
 else
   echo "Unknown command! Usage:"
   echo "./build.sh                - compile"
   echo "./build.sh debug <level>  - compile with debug logs enabled at provided level"
   echo "./build.sh flash          - flash"
   echo "./build.sh monitor        - monitor output"
+  echo "./build.sh menuconfig     - opens the idf.py menuconfig"
 fi
