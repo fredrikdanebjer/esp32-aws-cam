@@ -20,7 +20,7 @@ elif [[ $# -eq 2 ]] && [[ $1 = "debug" ]] && [[ "${2}" =~ ^[0-9]+$ ]]; then
   echo Setting DEBUG_PRINT_LEVEL to $2
   rm -rf build
   mkdir build
-  cmake -S . -B build -D_DEBUG_PRINT_LEVEL=$2 -DCMAKE_TOOLCHAIN_FILE=external/freertos/tools/cmake/toolchains/xtensa-esp32.cmake -G Ninja
+  cmake -S . -B build -D_DEBUG_PRINT_LEVEL=$2 -DISF_SDK_CONFIG_DEFAULTS=config/esp32/sdkconfig.defaults -DCMAKE_TOOLCHAIN_FILE=external/freertos/tools/cmake/toolchains/xtensa-esp32.cmake -G Ninja
   cmake --build build
 elif [[ $# -eq 1 ]] && [[ $1 = "flash" ]]; then
   cmake --build build --target flash
@@ -29,7 +29,8 @@ elif [[ $# -eq 1 ]] && [[ $1 = "monitor" ]]; then
   ./external/freertos/vendors/espressif/esp-idf/tools/idf.py monitor -p ${MONITOR_DEVICE} -B build
 else
   echo "Unknown command! Usage:"
-  echo "./build.sh          - compile"
-  echo "./build.sh flash    - flash"
-  echo "./build.sh monitor  - monitor output"
+  echo "./build.sh                - compile"
+  echo "./build.sh debug <level>  - compile with debug logs enabled at provided level"
+  echo "./build.sh flash          - flash"
+  echo "./build.sh monitor        - monitor output"
 fi
