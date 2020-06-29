@@ -24,6 +24,9 @@
 * THE SOFTWARE.
 */
 
+#ifndef FE_WIFI__H
+#define FE_WIFI__H
+
 #include "iot_wifi.h"
 
 /*
@@ -43,3 +46,5 @@ int FE_WIFI_deinit();
 * @brief Connects to initialzed WiFi
 */
 int FE_WIFI_connect(void);
+
+#endif /* ifndef FE_WIFI__H */
