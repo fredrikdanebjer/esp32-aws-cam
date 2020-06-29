@@ -25,18 +25,41 @@
 */
 
 #include <stdint.h>
-#include "util/debug.h"
 #include "xtensa/core-macros.h"
+#include "fe_sys.h"
+#include "fe_wifi.h"
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "FreeRTOSConfig.h"
+
+#include "esp_log.h"
+
+#include "fsu_eye_wifi_credentials.h"
+
+// CPU Ticks per second
+#define CPU_SPEED_SECONDS (160000000U)
 
 // Application entry-point
 void app_main()
 {
+  // Initalize System Resources
+  FE_SYS_init();
+
+  FE_WIFI_init(FSU_EYE_WIFI_SSID,
+               FSU_EYE_WIFI_PASSWORD,
+               FSU_EYE_WIFI_SECURITY);
+
+  FE_WIFI_connect();
+
   uint32_t last_time = XTHAL_GET_CCOUNT();
 
   while (1)
   {
-    while (XTHAL_GET_CCOUNT() - last_time < 10000000);
+    // Inprecise wait using XT-HAL
+    while (XTHAL_GET_CCOUNT() - last_time < CPU_SPEED_SECONDS * 5);
     last_time = XTHAL_GET_CCOUNT();
-    DEBUG_print(DEBUG_info, "Hello from FSU Eye\n");
+    ESP_LOGI("FSU_EYE", "Hello from FSU-Eye!\n");
   }
 }
+

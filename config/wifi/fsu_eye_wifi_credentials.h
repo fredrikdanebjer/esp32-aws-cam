@@ -27,6 +27,8 @@
 #ifndef FSU_EYE_WIFI_CREDENTIALS__H
 #define FSU_EYE_WIFI_CREDENTIALS__H
 
+#include "iot_wifi.h"
+
 /** \addtogroup FSU_EYE_MAC_ADDR
  *
  * Default MAC Address
