@@ -35,6 +35,10 @@ The provided bash script can be used to build on Linux
 ./build.sh
 ```
 
+### Populate Credentials
+
+The FSU-Eye needs to connect to the local WiFi in order to operate correctly, in order to this the appropriate WiFi seetings needs to be provided. The programmer needs to edit the file config/wifi/fsu_eye_wifi_credentials.h with appropriate values, mainly for SSID and password, but in case other settings for your local WiFi differs from default, change these too.
+
 ## Hardware
 
 This project uses an ESP32-CAM with an OV2640 Camera. Example pictures can be seen below
