@@ -24,17 +24,20 @@
 * THE SOFTWARE.
 */
 
+#ifndef FSU_EYE_WIFI_CREDENTIALS__H
+#define FSU_EYE_WIFI_CREDENTIALS__H
+
 /** \addtogroup FSU_EYE_MAC_ADDR
  *
  * Default MAC Address
  *  @{
  */
-#define FSU_EYE_MAC_ADDR0                      0x00
-#define FSU_EYE_MAC_ADDR1                      0x11
-#define FSU_EYE_MAC_ADDR2                      0x22
-#define FSU_EYE_MAC_ADDR3                      0x33
-#define FSU_EYE_MAC_ADDR4                      0x44
-#define FSU_EYE_MAC_ADDR5                      0x21
+#define FSU_EYE_MAC_ADDR0                     0x00
+#define FSU_EYE_MAC_ADDR1                     0x11
+#define FSU_EYE_MAC_ADDR2                     0x22
+#define FSU_EYE_MAC_ADDR3                     0x33
+#define FSU_EYE_MAC_ADDR4                     0x44
+#define FSU_EYE_MAC_ADDR5                     0x21
 /** @}*/
 
 /** \addtogroup FSU_EYE_IP_ADDR
@@ -42,10 +45,10 @@
  * Default IP Address
  *  @{
  */
-#define FSU_EYE_IP_ADDR0                       192
-#define FSU_EYE_IP_ADDR1                       168
-#define FSU_EYE_IP_ADDR2                       0
-#define FSU_EYE_IP_ADDR3                       105
+#define FSU_EYE_IP_ADDR0                      192
+#define FSU_EYE_IP_ADDR1                      168
+#define FSU_EYE_IP_ADDR2                      0
+#define FSU_EYE_IP_ADDR3                      105
 /** @}*/
 
 /** \addtogroup FSU_EYE_GATEWAY_ADDR
@@ -53,10 +56,10 @@
  * Default Gateway Address
  *  @{
  */
-#define FSU_EYE_GATEWAY_ADDR0                  192
-#define FSU_EYE_GATEWAY_ADDR1                  168
-#define FSU_EYE_GATEWAY_ADDR2                  0
-#define FSU_EYE_GATEWAY_ADDR3                  1
+#define FSU_EYE_GATEWAY_ADDR0                 192
+#define FSU_EYE_GATEWAY_ADDR1                 168
+#define FSU_EYE_GATEWAY_ADDR2                 0
+#define FSU_EYE_GATEWAY_ADDR3                 1
 /** @}*/
 
 /** \addtogroup FSU_EYE_DSN_SERVER_ADDR
@@ -64,10 +67,10 @@
  * Default DNS Server Address
  *  @{
  */
-#define FSU_EYE_DNS_SERVER_ADDR0               208
-#define FSU_EYE_DNS_SERVER_ADDR1               67
-#define FSU_EYE_DNS_SERVER_ADDR2               222
-#define FSU_EYE_DNS_SERVER_ADDR3               222
+#define FSU_EYE_DNS_SERVER_ADDR0              208
+#define FSU_EYE_DNS_SERVER_ADDR1              67
+#define FSU_EYE_DNS_SERVER_ADDR2              222
+#define FSU_EYE_DNS_SERVER_ADDR3              222
 /** @}*/
 
 /** \addtogroup FSU_EYE_NET_MASK
@@ -75,21 +78,21 @@
  * Default Net MASK
  *  @{
  */
-#define FSU_EYE_NET_MASK0                      255
-#define FSU_EYE_NET_MASK1                      255
-#define FSU_EYE_NET_MASK2                      255
-#define FSU_EYE_NET_MASK3                      0
+#define FSU_EYE_NET_MASK0                     255
+#define FSU_EYE_NET_MASK1                     255
+#define FSU_EYE_NET_MASK2                     255
+#define FSU_EYE_NET_MASK3                     0
 /** @}*/
 
 /*
  * @brief Wi-Fi network to join.
  */
-#define FSU_EYE_WIFI_SSID                    ""
+#define FSU_EYE_WIFI_SSID                     ""
 
 /*
  * @brief Password needed to join Wi-Fi network.
  */
-#define FSU_EYE_WIFI_PASSWORD                ""
+#define FSU_EYE_WIFI_PASSWORD                 ""
 
 /*
  * @brief Wi-Fi network security type.
@@ -97,3 +100,5 @@
  * eWiFiSecurityWPA2 (depending on the support of your device Wi-Fi radio).
  */
 #define FSU_EYE_WIFI_SECURITY                eWiFiSecurityWPA2
+
+#endif /* ifndef FSU_EYE_WIFI_CREDENTIALS__H */
