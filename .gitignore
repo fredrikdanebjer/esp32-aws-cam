@@ -1,2 +1,9 @@
+# Do not include files built
 ./build
+./build/
 ./build/*
+
+# Do not include tags procuded by Ctags
+tags
+
+
