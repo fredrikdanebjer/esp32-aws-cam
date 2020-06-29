@@ -1,31 +1,42 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.13)
 
 set(PROJECT_NAME "FSU-Eye")
 
 project(${PROJECT_NAME})
 
-# Set Debug Level
-IF (DEFINED _DEBUG_PRINT_LEVEL)
-  ADD_DEFINITIONS(-DDEBUG_PRINT_LEVEL=${_DEBUG_PRINT_LEVEL})
-ENDIF()
-
-# Add primary entry-point
-add_executable(${PROJECT_NAME}
-  fsu/src/main.c
+file(GLOB SOURCES
+        "src/*.c"
+        "src/fe_system/src/*.c"
 )
 
-# Tell IDF build to link against this target.
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+
+set(INCLUDE_DIRS ${INCLUDE_DIRS}
+        "config/aws"
+        "config/wifi"
+        "include/fe_system/include"
+        "external/freertos/demos/include"
+        "external/freertos/demos/network_manager"
+        "external/freertos/demos/dev_mode_key_provisioning/include"
+)
+
+include_directories(${INCLUDE_DIRS})
+
 set(IDF_PROJECT_EXECUTABLE ${PROJECT_NAME})
 
-# Add subdirectories. AFR_BOARD tells which board to target.
-set(AFR_BOARD espressif.esp32_devkitc CACHE INTERNAL "")
-add_subdirectory(external/freertos)
-add_subdirectory(fsu)
+set(IDF_SDKCONFIG_DEFAULTS "${CMAKE_CURRENT_LIST_DIR}/config/esp32/sdkconfig.defaults")
 
-# Link against modules
-target_link_libraries(${PROJECT_NAME}
-  PRIVATE
-  fsu_eye_freertos
-  AFR::mqtt
-  util
-)
+set(AFR_BOARD espressif.esp32_devkitc CACHE INTERNAL "")
+
+add_subdirectory("external/freertos")
+add_subdirectory("fsu")
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+        AFR::wifi
+        AFR::utils
+        AFR::common
+        AFR::pkcs11
+        util
+        )
+
+target_compile_options(${PROJECT_NAME} PRIVATE -Wno-pointer-sign)
