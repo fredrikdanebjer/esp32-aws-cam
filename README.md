@@ -37,7 +37,15 @@ The provided bash script can be used to build on Linux
 
 ### Populate Credentials
 
+The FSU-Eye needs some credentials in order to work, as it is intended to connect over WiFi and then further connect to a webservice.
+
+#### WiFi
+
 The FSU-Eye needs to connect to the local WiFi in order to operate correctly, in order to this the appropriate WiFi seetings needs to be provided. The programmer needs to edit the file config/wifi/fsu_eye_wifi_credentials.h with appropriate values, mainly for SSID and password, but in case other settings for your local WiFi differs from default, change these too.
+
+#### AWS
+
+In order to connect to AWS the device must first have been provisioned in on your AWS account - the necessary credentials needs then to be populated in the config/aws/fsu_eye_aws_credentials.h file. CAUTION: Never, ever, ever, upload any AWS credentials online as it can seriously jeopordize your wallet!
 
 ## Hardware
 
