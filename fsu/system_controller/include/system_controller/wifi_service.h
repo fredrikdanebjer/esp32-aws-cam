@@ -1,5 +1,5 @@
 /*
-* @file fe_wifi.h
+* @file wifi_service.h
 *
 * The MIT License (MIT)
 *
@@ -24,36 +24,12 @@
 * THE SOFTWARE.
 */
 
-#ifndef FE_WIFI__H
-#define FE_WIFI__H
-
-#include "iot_wifi.h"
+#ifndef WIFI_SERVICE__H
+#define WIFI_SERVICE__H
 
 /*
-* @brief Initializes the WiFi in the FE_SYS space.
-* @param ssid Null-terminated SSID string
-* @param passwd Null-terminated Password String for the network
-* @param security Wifi security model
-* @retval EXIT_SUCCESS or EXIT_FAILURE
+* @brief Registers the wifi service to the system controller.
 */
-int FE_WIFI_init(char *ssid, char *passwd, WIFISecurity_t security);
+void WIFI_SERVICE_register();
 
-/*
-* @brief Deinitializes the WiFi
-* @retval EXIT_SUCCESS or EXIT_FAILURE
-*/
-int FE_WIFI_deinit();
-
-/*
-* @brief Connects to initialzed WiFi
-* @retval EXIT_SUCCESS or EXIT_FAILURE
-*/
-int FE_WIFI_connect(void);
-
-/*
-* @brief Connects to initialzed WiFi
-* @retval EXIT_SUCCESS or EXIT_FAILURE
-*/
-int FE_WIFI_disconnect(void);
-
-#endif /* ifndef FE_WIFI__H */
+#endif /* ifndef WIFI_SERVICE__H */

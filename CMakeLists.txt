@@ -7,6 +7,7 @@ project(${PROJECT_NAME})
 file(GLOB SOURCES
         "src/*.c"
         "src/fe_system/src/*.c"
+        "fsu/system_controller/src/*.c"
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
@@ -15,6 +16,7 @@ set(INCLUDE_DIRS ${INCLUDE_DIRS}
         "config/aws"
         "config/wifi"
         "include/fe_system/include"
+        "fsu/system_controller/include/system_controller"
         "external/freertos/demos/include"
         "external/freertos/demos/network_manager"
         "external/freertos/demos/dev_mode_key_provisioning/include"
@@ -29,7 +31,6 @@ set(IDF_SDKCONFIG_DEFAULTS "${CMAKE_CURRENT_LIST_DIR}/config/esp32/sdkconfig.def
 set(AFR_BOARD espressif.esp32_devkitc CACHE INTERNAL "")
 
 add_subdirectory("external/freertos")
-add_subdirectory("fsu")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         AFR::wifi

@@ -27,15 +27,14 @@
 #include <stdint.h>
 #include "xtensa/core-macros.h"
 #include "fe_sys.h"
-#include "fe_wifi.h"
+#include "system_controller.h"
+#include "wifi_service.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
 #include "FreeRTOSConfig.h"
 
 #include "esp_log.h"
-
-#include "fsu_eye_wifi_credentials.h"
 
 // CPU Ticks per second
 #define CPU_SPEED_SECONDS (160000000U)
@@ -46,11 +45,8 @@ void app_main()
   // Initalize System Resources
   FE_SYS_init();
 
-  FE_WIFI_init(FSU_EYE_WIFI_SSID,
-               FSU_EYE_WIFI_PASSWORD,
-               FSU_EYE_WIFI_SECURITY);
-
-  FE_WIFI_connect();
+  SC_init();
+  WIFI_SERVICE_register();
 
   uint32_t last_time = XTHAL_GET_CCOUNT();
 

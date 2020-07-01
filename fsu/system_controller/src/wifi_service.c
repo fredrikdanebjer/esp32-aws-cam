@@ -1,5 +1,5 @@
 /*
-* @file fe_wifi.h
+* @file wifi_service.c
 *
 * The MIT License (MIT)
 *
@@ -24,36 +24,52 @@
 * THE SOFTWARE.
 */
 
-#ifndef FE_WIFI__H
-#define FE_WIFI__H
+#include "fe_wifi.h"
+#include "system_controller.h"
 
-#include "iot_wifi.h"
+#include "fsu_eye_wifi_credentials.h"
 
-/*
-* @brief Initializes the WiFi in the FE_SYS space.
-* @param ssid Null-terminated SSID string
-* @param passwd Null-terminated Password String for the network
-* @param security Wifi security model
-* @retval EXIT_SUCCESS or EXIT_FAILURE
-*/
-int FE_WIFI_init(char *ssid, char *passwd, WIFISecurity_t security);
+#include "esp_log.h"
 
-/*
-* @brief Deinitializes the WiFi
-* @retval EXIT_SUCCESS or EXIT_FAILURE
-*/
-int FE_WIFI_deinit();
+static int WIFI_SERVICE_init()
+{
+  int status = FE_WIFI_init(FSU_EYE_WIFI_SSID,
+                            FSU_EYE_WIFI_PASSWORD,
+                            FSU_EYE_WIFI_SECURITY);
 
-/*
-* @brief Connects to initialzed WiFi
-* @retval EXIT_SUCCESS or EXIT_FAILURE
-*/
-int FE_WIFI_connect(void);
+  if (EXIT_SUCCESS != status)
+  {
+    return status;
+  }
 
-/*
-* @brief Connects to initialzed WiFi
-* @retval EXIT_SUCCESS or EXIT_FAILURE
-*/
-int FE_WIFI_disconnect(void);
+  return FE_WIFI_connect();
+}
 
-#endif /* ifndef FE_WIFI__H */
+static int WIFI_SERVICE_deinit()
+{
+  int status = FE_WIFI_disconnect();
+
+  if (EXIT_SUCCESS != status)
+  {
+    return status;
+  }
+
+  return FE_WIFI_deinit();
+}
+
+static int WIFI_SERVICE_recv_msg(uint8_t cmd)
+{
+  return EXIT_SUCCESS;
+}
+
+void WIFI_SERVICE_register()
+{
+  sc_service_t ws;
+
+  ws.init_service = WIFI_SERVICE_init;
+  ws.deinit_service = WIFI_SERVICE_deinit;
+  ws.recv_msg = WIFI_SERVICE_recv_msg;
+  ws.service_id = sc_service_wifi;
+
+  SC_register_service(&ws);
+}
