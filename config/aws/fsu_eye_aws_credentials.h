@@ -42,4 +42,20 @@
  */
 #define clientcredentialMQTT_BROKER_PORT             8883
 
+/*
+ * @brief Device Private Key to connect to AWS IoT Core.
+ */
+#define clientcredentialPRIVATE_KEY                  ""
+
+/*
+ * @brief Client Certificate.
+ */
+#define clientcredentialCLIENT_CERT                  ""
+
+/*
+ * @brief Root Certificate Authority.
+ */
+#define clientcredentialROOT_CA                      ""
+
+
 #endif /* ifndef FSU_EYE_AWS_CREDENTIALS__H */
