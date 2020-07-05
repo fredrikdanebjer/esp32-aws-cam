@@ -27,30 +27,37 @@
 #include <stdint.h>
 #include "xtensa/core-macros.h"
 #include "fe_sys.h"
-#include "fe_wifi.h"
+#include "system_controller.h"
+#include "wifi_service.h"
+#include "aws_service.h"
+#include "platform/iot_threads.h"
+#include "iot_logging_task.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
 #include "FreeRTOSConfig.h"
 
+#include "iot_init.h"
 #include "esp_log.h"
 
-#include "fsu_eye_wifi_credentials.h"
+// EYE App configs
+#define EYE_APP_TASK_PRIORITY     (tskIDLE_PRIORITY + 5U)
+#define EYE_APP_STACKSIZE         (0x1800U)
 
 // CPU Ticks per second
 #define CPU_SPEED_SECONDS (160000000U)
 
-// Application entry-point
-void app_main()
+static void eye_app(void * pArgument)
 {
-  // Initalize System Resources
-  FE_SYS_init();
+  // Initialize AWS IoT SDK
+  IotSdk_Init();
 
-  FE_WIFI_init(FSU_EYE_WIFI_SSID,
-               FSU_EYE_WIFI_PASSWORD,
-               FSU_EYE_WIFI_SECURITY);
+  // Initialize the System Controller
+  SC_init();
 
-  FE_WIFI_connect();
+  // Registers services to System Controllers
+  WIFI_SERVICE_register();
+  AWS_SERVICE_register();
 
   uint32_t last_time = XTHAL_GET_CCOUNT();
 
@@ -59,7 +66,22 @@ void app_main()
     // Inprecise wait using XT-HAL
     while (XTHAL_GET_CCOUNT() - last_time < CPU_SPEED_SECONDS * 5);
     last_time = XTHAL_GET_CCOUNT();
-    ESP_LOGI("FSU_EYE", "Hello from FSU-Eye!\n");
+    ESP_LOGI("FSU_EYE", "Eye App Tick!\n");
   }
+}
+
+// Application entry-point
+int app_main()
+{
+  // Initalize System Resources
+  FE_SYS_init();
+
+  // Create a detached thread of main app
+  Iot_CreateDetachedThread(eye_app,
+                           NULL,
+                           EYE_APP_TASK_PRIORITY,
+                           EYE_APP_STACKSIZE);
+
+  return 0;
 }
 

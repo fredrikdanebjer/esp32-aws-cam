@@ -1,5 +1,5 @@
 /*
-* @file fsu_eye_aws_credential.c
+* @file system_controller.h
 *
 * The MIT License (MIT)
 *
@@ -24,38 +24,28 @@
 * THE SOFTWARE.
 */
 
-#ifndef FSU_EYE_AWS_CREDENTIALS__H
-#define FSU_EYE_AWS_CREDENTIALS__H
+#ifndef SYSTEM_CONTROLLER__H
+#define SYSTEM_CONTROLLER__H
 
-/*
- * @brief MQTT Broker endpoint.
- */
-#define FSU_EYE_AWS_MQTT_BROKER_ENDPOINT         ""
+#include <stdint.h>
 
-/*
- * @brief AWS IoT Core Thing Name.
- */
-#define FSU_EYE_AWS_IOT_THING_NAME               ""
+typedef struct service_interface {
+  int (*init_service)();
+  int (*deinit_service)();
+  int (*recv_msg)(uint8_t);
+  uint8_t service_id;
+} sc_service_t;
 
-/*
- * @brief AWS MQTT broker default port.
- */
-#define FSU_EYE_AWS_MQTT_BROKER_PORT             8883
+enum {
+  sc_service_wifi,
+  sc_service_aws,
+  sc_service_count
+} sc_service_list_t;
 
-/*
- * @brief Device Private Key to connect to AWS IoT Core.
- */
-#define FSU_EYE_AWS_PRIVATE_KEY                  ""
+int SC_init();
+int SC_deinit();
+int  SC_register_service(sc_service_t *service);
+int SC_deregister_service(uint8_t service_id);
+void SC_run();
 
-/*
- * @brief Client Certificate.
- */
-#define FSU_EYE_AWS_CLIENT_CERT                  ""
-
-/*
- * @brief Root Certificate Authority.
- */
-#define FSU_EYE_AWS_ROOT_CA                      ""
-
-
-#endif /* ifndef FSU_EYE_AWS_CREDENTIALS__H */
+#endif /* ifndef SYSTEM_CONTROLLER__H */

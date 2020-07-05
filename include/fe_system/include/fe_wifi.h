@@ -34,17 +34,26 @@
 * @param ssid Null-terminated SSID string
 * @param passwd Null-terminated Password String for the network
 * @param security Wifi security model
+* @retval EXIT_SUCCESS or EXIT_FAILURE
 */
 int FE_WIFI_init(char *ssid, char *passwd, WIFISecurity_t security);
 
 /*
 * @brief Deinitializes the WiFi
+* @retval EXIT_SUCCESS or EXIT_FAILURE
 */
 int FE_WIFI_deinit();
 
 /*
 * @brief Connects to initialzed WiFi
+* @retval EXIT_SUCCESS or EXIT_FAILURE
 */
 int FE_WIFI_connect(void);
+
+/*
+* @brief Connects to initialzed WiFi
+* @retval EXIT_SUCCESS or EXIT_FAILURE
+*/
+int FE_WIFI_disconnect(void);
 
 #endif /* ifndef FE_WIFI__H */

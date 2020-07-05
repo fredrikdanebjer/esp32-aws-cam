@@ -1,5 +1,5 @@
 /*
-* @file debug.h
+* @file aws_service.h
 *
 * The MIT License (MIT)
 *
@@ -24,23 +24,11 @@
 * THE SOFTWARE.
 */
 
-#ifndef DEBUG_H
-#define DEBUG_H
+#ifndef AWS_SERVICE__H_
+#define AWS_SERVICE__H_
 
-typedef enum {
-  DEBUG_emer = 0,
-  DEBUG_warn,
-  DEBUG_info,
-  DEBUG_count,
-} DEBUG_level_t;
+#include "system_controller.h"
 
-/*
-* @brief Prints a string if level is less or equal to DEBUG_PRINT_LEVEL. This
-* function is a wrapper of printf with priority setting.
-* @param level defines what priority this message has
-* @param format string formatter
-* @param ... arguments
-*/
-void DEBUG_print(DEBUG_level_t level, const char* format, ...);
+void AWS_SERVICE_register();
 
-#endif // DEBUG_H
+#endif // AWS_SERVICE__H_

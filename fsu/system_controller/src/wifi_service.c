@@ -1,5 +1,5 @@
 /*
-* @file fsu_eye_aws_credential.c
+* @file wifi_service.c
 *
 * The MIT License (MIT)
 *
@@ -24,38 +24,52 @@
 * THE SOFTWARE.
 */
 
-#ifndef FSU_EYE_AWS_CREDENTIALS__H
-#define FSU_EYE_AWS_CREDENTIALS__H
+#include "fe_wifi.h"
+#include "system_controller.h"
 
-/*
- * @brief MQTT Broker endpoint.
- */
-#define FSU_EYE_AWS_MQTT_BROKER_ENDPOINT         ""
+#include "fsu_eye_wifi_credentials.h"
 
-/*
- * @brief AWS IoT Core Thing Name.
- */
-#define FSU_EYE_AWS_IOT_THING_NAME               ""
+#include "esp_log.h"
 
-/*
- * @brief AWS MQTT broker default port.
- */
-#define FSU_EYE_AWS_MQTT_BROKER_PORT             8883
+static int WIFI_SERVICE_init()
+{
+  int status = FE_WIFI_init(FSU_EYE_WIFI_SSID,
+                            FSU_EYE_WIFI_PASSWORD,
+                            FSU_EYE_WIFI_SECURITY);
 
-/*
- * @brief Device Private Key to connect to AWS IoT Core.
- */
-#define FSU_EYE_AWS_PRIVATE_KEY                  ""
+  if (EXIT_SUCCESS != status)
+  {
+    return status;
+  }
 
-/*
- * @brief Client Certificate.
- */
-#define FSU_EYE_AWS_CLIENT_CERT                  ""
+  return FE_WIFI_connect();
+}
 
-/*
- * @brief Root Certificate Authority.
- */
-#define FSU_EYE_AWS_ROOT_CA                      ""
+static int WIFI_SERVICE_deinit()
+{
+  int status = FE_WIFI_disconnect();
 
+  if (EXIT_SUCCESS != status)
+  {
+    return status;
+  }
 
-#endif /* ifndef FSU_EYE_AWS_CREDENTIALS__H */
+  return FE_WIFI_deinit();
+}
+
+static int WIFI_SERVICE_recv_msg(uint8_t cmd)
+{
+  return EXIT_SUCCESS;
+}
+
+void WIFI_SERVICE_register()
+{
+  sc_service_t ws;
+
+  ws.init_service = WIFI_SERVICE_init;
+  ws.deinit_service = WIFI_SERVICE_deinit;
+  ws.recv_msg = WIFI_SERVICE_recv_msg;
+  ws.service_id = sc_service_wifi;
+
+  SC_register_service(&ws);
+}

@@ -101,3 +101,10 @@ int FE_WIFI_connect(void)
 
   return EXIT_SUCCESS;
 }
+
+int FE_WIFI_disconnect(void)
+{
+  (void)WIFI_Disconnect();
+
+  return EXIT_FAILURE;
+}
