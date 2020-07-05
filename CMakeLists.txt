@@ -37,6 +37,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         AFR::utils
         AFR::common
         AFR::pkcs11
+        AFR::platform
+        AFR::mqtt
         )
 
 target_compile_options(${PROJECT_NAME} PRIVATE -Wno-pointer-sign)

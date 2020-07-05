@@ -38,6 +38,7 @@ typedef struct service_interface {
 
 enum {
   sc_service_wifi,
+  sc_service_aws,
   sc_service_count
 } sc_service_list_t;
 

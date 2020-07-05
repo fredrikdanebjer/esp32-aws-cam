@@ -101,7 +101,7 @@ void vApplicationPingReplyHook( ePingReplyStatus_t eStatus, uint16_t usIdentifie
 
 const char * pcApplicationHostnameHook( void )
 {
-  return clientcredentialIOT_THING_NAME;
+  return FSU_EYE_AWS_IOT_THING_NAME;
 }
 
 void vApplicationIPNetworkEventHook(eIPCallbackEvent_t eNetworkEvent)
