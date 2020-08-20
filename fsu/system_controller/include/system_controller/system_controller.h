@@ -44,8 +44,9 @@ enum {
 
 int SC_init();
 int SC_deinit();
-int  SC_register_service(sc_service_t *service);
+int SC_register_service(sc_service_t *service);
 int SC_deregister_service(uint8_t service_id);
 void SC_run();
+int SC_send_cmd(uint8_t sid, uint8_t cmd);
 
 #endif /* ifndef SYSTEM_CONTROLLER__H */

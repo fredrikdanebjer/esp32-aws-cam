@@ -32,9 +32,12 @@
 #include "platform/iot_network_freertos.h"
 #include "platform/iot_network.h"
 #include "iot_mqtt.h"
+#include "semphr.h"
 
 #include "fsu_eye_aws_credentials.h"
 #include "private/iot_default_root_certificates.h"
+
+#include "esp_log.h"
 
 #define FSU_EYE_NETWORK_INTERFACE     IOT_NETWORK_INTERFACE_AFR
 #define FSU_EYE_AWS_IOT_ALPN_MQTT    "x-amzn-mqtt-ca"
@@ -42,14 +45,31 @@
 #define KEEP_ALIVE_SECONDS            (60U)
 #define MQTT_TIMEOUT_MS               (5000U)
 
+#define PUBLISH_RETRY_LIMIT           (1U)
+#define PUBLISH_RETRY_MS              (1000U)
+
 #define FSU_EYE_TOPIC_ROOT            "fsu/eye"
 #define FSU_EYE_TOPIC_LWT             (FSU_EYE_TOPIC_ROOT "/lwt")
+#define FSU_EYE_TOPIC_INFO            (FSU_EYE_TOPIC_ROOT "/info")
 
-#define LWT_MESSAGE                   (FSU_EYE_AWS_IOT_THING_NAME " lost connection.")
+#define LWT_MESSAGE                   ("{"\
+                                          "\"id\":\"" FSU_EYE_AWS_IOT_THING_NAME "\"" \
+                                          "\"message\":\"LWT\"" \
+                                       "}")
+
+#define EYE_PUBLISH_MAX_LEN           (0x100U)
+
+#define EYE_INFO_MSG                  "{"\
+                                        "\"id\":\"%s\","\
+                                        "\"msg\":\"%s\""\
+                                      "}"
 
 static IotMqttConnection_t _mqtt_connection;
 static uint8_t _initialized = 0;
 static uint8_t _connected = 0;
+static char _payload[EYE_PUBLISH_MAX_LEN];
+static SemaphoreHandle_t _payload_mutex;
+static uint8_t _publish_complete;
 
 IotNetworkServerInfo_t aws_server_info = {
   .pHostName = FSU_EYE_AWS_MQTT_BROKER_ENDPOINT,
@@ -84,6 +104,8 @@ static int AWS_SERVICE_init()
   _mqtt_connection = IOT_MQTT_CONNECTION_INITIALIZER;
   _connected = 0;
   _initialized = 1;
+  memset(_payload, '\0', EYE_PUBLISH_MAX_LEN);
+  _payload_mutex = xSemaphoreCreateMutex();
 
   return EXIT_SUCCESS;
 }
@@ -91,21 +113,107 @@ static int AWS_SERVICE_init()
 static int AWS_SERVICE_deinit()
 {
   IotMqtt_Cleanup();
+  vSemaphoreDelete(_payload_mutex);
+  _initialized = 0;
 
   return EXIT_SUCCESS;
 }
 
-static int AWS_SERVICE_recv_msg(uint8_t cmd)
+static void _publish_complete_callback(void *param1,
+                                       IotMqttCallbackParam_t *const pOperation)
 {
+  ESP_LOGI("AWS_SERVICE", "MQTT publish complete!\n");
+  _publish_complete = 1;
+}
+
+static void _mqtt_disconnected_callback(void *param1,
+                                       IotMqttCallbackParam_t *const pOperation)
+{
+  ESP_LOGI("AWS_SERVICE", "MQTT disconnection!\n");
+  _connected = 0;
+}
+
+
+static int AWS_SERVICE_mqtt_publish(const char *msg, size_t len)
+{
+  if (!_connected)
+  {
+    return EXIT_FAILURE;
+  }
+
+  IotMqttError_t status = IOT_MQTT_STATUS_PENDING;
+  IotMqttPublishInfo_t publish_info = IOT_MQTT_PUBLISH_INFO_INITIALIZER;
+  IotMqttCallbackInfo_t publish_complete = IOT_MQTT_CALLBACK_INFO_INITIALIZER;
+  _publish_complete = 0;
+
+  publish_complete.function = _publish_complete_callback;
+  publish_complete.pCallbackContext = NULL;
+
+  publish_info.qos = IOT_MQTT_QOS_1;
+  publish_info.pTopicName = FSU_EYE_TOPIC_INFO;
+  publish_info.topicNameLength = strlen(FSU_EYE_TOPIC_INFO);
+  publish_info.retryMs = PUBLISH_RETRY_MS;
+  publish_info.retryLimit = PUBLISH_RETRY_LIMIT;
+  publish_info.pPayload = msg;
+  publish_info.payloadLength = len;
+
+  status = IotMqtt_Publish(_mqtt_connection,
+                           &publish_info,
+                           0,
+                           &publish_complete,
+                           NULL);
+
+  if(IOT_MQTT_STATUS_PENDING != status)
+  {
+    return EXIT_FAILURE;
+  }
+
   return EXIT_SUCCESS;
+}
+
+static int AWS_SERVICE_publish_info(const char *info)
+{
+  if (!_initialized || !_connected)
+  {
+    return EXIT_FAILURE;
+  }
+
+  size_t len = 0;
+
+  if(xSemaphoreTake(_payload_mutex, (TickType_t) 10U) == pdTRUE)
+  {
+    memset(_payload, '\0', EYE_PUBLISH_MAX_LEN);
+
+    len = snprintf(_payload, EYE_PUBLISH_MAX_LEN, EYE_INFO_MSG, FSU_EYE_AWS_IOT_THING_NAME, info);
+    if (len > 0)
+    {
+      AWS_SERVICE_mqtt_publish(_payload, len);
+      xSemaphoreGive(_payload_mutex);
+
+      return EXIT_SUCCESS;
+    }
+
+    xSemaphoreGive(_payload_mutex);
+  }
+
+  return EXIT_FAILURE;
 }
 
 static int AWS_SERVICE_mqtt_connect()
 {
+  if (_connected)
+  {
+    return EXIT_SUCCESS;
+  }
+
   IotMqttError_t connect_status;
   IotMqttNetworkInfo_t network_info = IOT_MQTT_NETWORK_INFO_INITIALIZER;
   IotMqttConnectInfo_t connect_info = IOT_MQTT_CONNECT_INFO_INITIALIZER;
   IotMqttPublishInfo_t will_info = IOT_MQTT_PUBLISH_INFO_INITIALIZER;
+  IotMqttCallbackInfo_t callback_info = {
+    .pCallbackContext = NULL,
+    .function = _mqtt_disconnected_callback
+  };
   _mqtt_connection = IOT_MQTT_CONNECTION_INITIALIZER;
 
   // Set the AWS Connection Credentials
@@ -113,6 +221,7 @@ static int AWS_SERVICE_mqtt_connect()
   network_info.u.setup.pNetworkServerInfo = &aws_server_info;
   network_info.u.setup.pNetworkCredentialInfo = &network_credentials;
   network_info.pNetworkInterface = FSU_EYE_NETWORK_INTERFACE;
+  network_info.disconnectCallback = callback_info;
 
   // Set the members of the Last Will and Testament (LWT) message info
   will_info.pTopicName = FSU_EYE_TOPIC_LWT;
@@ -129,18 +238,36 @@ static int AWS_SERVICE_mqtt_connect()
   connect_info.clientIdentifierLength = strlen(FSU_EYE_AWS_IOT_THING_NAME);
 
   // Open MQTT connection
+  ESP_LOGI("AWS_SERVICE", "Establishing MQTT Connection!\n");
   connect_status = IotMqtt_Connect(&network_info,
                                    &connect_info,
                                    MQTT_TIMEOUT_MS,
                                    &_mqtt_connection);
 
-  if (IOT_MQTT_SUCCESS == connect_status)
+  if (IOT_MQTT_SUCCESS != connect_status)
   {
+    ESP_LOGI("AWS_SERVICE", "MQTT Connection Failed!\n");
     return EXIT_FAILURE;
   }
 
   _connected = 1;
+  ESP_LOGI("AWS_SERVICE", "MQTT Connected!\n");
+
   return EXIT_SUCCESS;
+}
+
+static int AWS_SERVICE_recv_msg(uint8_t cmd)
+{
+  switch (cmd)
+  {
+    case (0):
+      return AWS_SERVICE_mqtt_connect();
+
+    case (1):
+      return AWS_SERVICE_publish_info("Hello from FSU-Eye");
+
+  }
+  return EXIT_FAILURE;
 }
 
 void AWS_SERVICE_register()
@@ -153,6 +280,4 @@ void AWS_SERVICE_register()
   as.service_id = sc_service_aws;
 
   SC_register_service(&as);
-
-  while (AWS_SERVICE_mqtt_connect() != EXIT_SUCCESS);
 }
