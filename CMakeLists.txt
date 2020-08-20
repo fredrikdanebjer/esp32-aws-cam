@@ -6,8 +6,8 @@ project(${PROJECT_NAME})
 
 file(GLOB SOURCES
         "src/*.c"
-        "src/fe_system/src/*.c"
-        "fsu/system_controller/src/*.c"
+        "src/fe_system/*.c"
+        "src/services/*.c"
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
@@ -16,7 +16,7 @@ set(INCLUDE_DIRS ${INCLUDE_DIRS}
         "config/aws"
         "config/wifi"
         "include/fe_system/include"
-        "fsu/system_controller/include/system_controller"
+        "include/services/include/services"
         "external/freertos/demos/include"
         "external/freertos/demos/network_manager"
         "external/freertos/demos/dev_mode_key_provisioning/include"

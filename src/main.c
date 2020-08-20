@@ -59,14 +59,20 @@ static void eye_app(void * pArgument)
   WIFI_SERVICE_register();
   AWS_SERVICE_register();
 
-  uint32_t last_time = XTHAL_GET_CCOUNT();
+  uint64_t last_time = (uint64_t) XTHAL_GET_CCOUNT();
 
   while (1)
   {
     // Inprecise wait using XT-HAL
-    while (XTHAL_GET_CCOUNT() - last_time < CPU_SPEED_SECONDS * 5);
-    last_time = XTHAL_GET_CCOUNT();
+    while (((uint64_t) XTHAL_GET_CCOUNT()) - last_time < CPU_SPEED_SECONDS * 10) vTaskDelay(500 / portTICK_PERIOD_MS);
+    last_time = (uint64_t) XTHAL_GET_CCOUNT();
     ESP_LOGI("FSU_EYE", "Eye App Tick!\n");
+
+    ESP_LOGI("FSU_EYE", "Ensuring connected!\n");
+    SC_send_cmd(sc_service_aws, 0);
+
+    ESP_LOGI("FSU_EYE", "Sending Info!\n");
+    SC_send_cmd(sc_service_aws, 1);
   }
 }
 
