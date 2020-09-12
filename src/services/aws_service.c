@@ -37,10 +37,11 @@
 #include "fsu_eye_aws_credentials.h"
 #include "private/iot_default_root_certificates.h"
 
+#include "aws_dev_mode_key_provisioning.h"
 #include "esp_log.h"
 
 #define FSU_EYE_NETWORK_INTERFACE     IOT_NETWORK_INTERFACE_AFR
-#define FSU_EYE_AWS_IOT_ALPN_MQTT    "x-amzn-mqtt-ca"
+#define FSU_EYE_AWS_IOT_ALPN_MQTT     "x-amzn-mqtt-ca"
 
 #define KEEP_ALIVE_SECONDS            (60U)
 #define MQTT_TIMEOUT_MS               (5000U)
@@ -88,6 +89,30 @@ static IotNetworkCredentials_t network_credentials = {
   .privateKeySize = sizeof(FSU_EYE_AWS_PRIVATE_KEY)
 };
 
+// Adds the Certificate and Private Key to the internal PKCS11 and mbedtls
+// utilized lists. The credentials seems to be stored in NVS.
+static int AWS_SERVICE_PKCS11_provision_key(void)
+{
+  ProvisioningParams_t provision_params;
+
+  memset(&provision_params, 0, sizeof(provision_params));
+
+  provision_params.pucClientPrivateKey = (uint8_t*) FSU_EYE_AWS_PRIVATE_KEY;
+  provision_params.pucClientCertificate = (uint8_t*) FSU_EYE_AWS_CLIENT_CERT;
+  provision_params.pucJITPCertificate = NULL;
+  provision_params.ulClientPrivateKeyLength = sizeof(FSU_EYE_AWS_PRIVATE_KEY);
+  provision_params.ulClientCertificateLength = sizeof(FSU_EYE_AWS_CLIENT_CERT);
+  provision_params.ulJITPCertificateLength = 0;
+
+  ESP_LOGI("AWS_SERVICE", "PKCS11 PrKey strlen & size: %d - %d.\n", sizeof(FSU_EYE_AWS_PRIVATE_KEY), strlen(FSU_EYE_AWS_PRIVATE_KEY));
+
+  if (vAlternateKeyProvisioning(&provision_params) != CKR_OK)
+  {
+    return EXIT_FAILURE;
+  }
+
+  return EXIT_SUCCESS;
+}
 
 static int AWS_SERVICE_init()
 {
@@ -106,6 +131,10 @@ static int AWS_SERVICE_init()
   _initialized = 1;
   memset(_payload, '\0', EYE_PUBLISH_MAX_LEN);
   _payload_mutex = xSemaphoreCreateMutex();
+
+  // For some reason the MQTT Connect method does not utilize the private key,
+  // it is instead always fetched from the internal PKCS11 provisioned list
+  AWS_SERVICE_PKCS11_provision_key();
 
   return EXIT_SUCCESS;
 }

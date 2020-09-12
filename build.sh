@@ -24,6 +24,8 @@ elif [[ $# -eq 2 ]] && [[ $1 = "debug" ]] && [[ "${2}" =~ ^[0-9]+$ ]]; then
   cmake --build build
 elif [[ $# -eq 1 ]] && [[ $1 = "flash" ]]; then
   cmake --build build --target flash
+elif [[ $# -eq 1 ]] && [[ $1 = "erase" ]]; then
+  ./external/freertos/vendors/espressif/esp-idf/tools/idf.py erase_flash
 elif [[ $# -eq 1 ]] && [[ $1 = "monitor" ]]; then
   echo "Trying to monitor with device ${MONITOR_DEVICE}. If your connection is using another device, please change in script"
   ./external/freertos/vendors/espressif/esp-idf/tools/idf.py monitor -p ${MONITOR_DEVICE} -B build
@@ -39,5 +41,6 @@ else
   echo "./build.sh debug <level>  - compile with debug logs enabled at provided level"
   echo "./build.sh flash          - flash"
   echo "./build.sh monitor        - monitor output"
+  echo "./build.sh erase          - erase flash"
   echo "./build.sh all            - builds with max highest debug resolution, flashes and starts monitoring"
 fi
