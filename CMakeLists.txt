@@ -32,6 +32,12 @@ set(IDF_SDKCONFIG_DEFAULTS "${CMAKE_CURRENT_LIST_DIR}/config/esp32/sdkconfig.def
 
 set(AFR_BOARD espressif.esp32_devkitc CACHE INTERNAL "")
 
+get_filename_component(
+    EXTRA_COMPONENT_DIRS
+    "external/esp32-camera" ABSOLUTE
+)
+list(APPEND IDF_EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS})
+
 add_subdirectory("external/freertos")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

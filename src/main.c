@@ -31,6 +31,7 @@
 #include "system_controller.h"
 #include "wifi_service.h"
 #include "aws_service.h"
+#include "camera_service.h"
 #include "platform/iot_threads.h"
 #include "iot_logging_task.h"
 
@@ -63,6 +64,7 @@ static void eye_app(void * pArgument)
   // Registers services to System Controllers
   WIFI_SERVICE_register();
   AWS_SERVICE_register();
+  CAM_SERVICE_register();
 
   memset(&publish_msg, 0, sizeof(message_info_t));
   publish_msg.msg = EYE_APP_PUBLISH_INFO;
@@ -82,6 +84,9 @@ static void eye_app(void * pArgument)
 
     ESP_LOGI("FSU_EYE", "Sending Info!\n");
     SC_send_cmd(sc_service_aws, AWS_SERVICE_CMD_MQTT_PUBLISH_MESSAGE, &publish_msg);
+
+    ESP_LOGI("FSU_EYE", "Taking Picture!\n");
+    SC_send_cmd(sc_service_camera, CAM_SERVICE_CMD_CAPTURE_SEND_IMAGE, NULL);
   }
 }
 

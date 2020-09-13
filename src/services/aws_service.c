@@ -63,9 +63,9 @@
 #define EYE_INFO_MSG_ID_FORMAT        "%s"
 #define EYE_INFO_MSG_MSG_FORMAT       "%s"
 #define EYE_INFO_MSG                  ("{"\
-                                        "\"id\":\"" EYE_INFO_MSG_ID_FORMAT "\","\
-                                        "\"msg\":\"" EYE_INFO_MSG_MSG_FORMAT "\""\
-                                      "}")
+                                         "\"id\":\"" EYE_INFO_MSG_ID_FORMAT "\","\
+                                         "\"msg\":\"" EYE_INFO_MSG_MSG_FORMAT "\""\
+                                       "}")
 
 static IotMqttConnection_t _mqtt_connection;
 static uint8_t _initialized = 0;
@@ -165,7 +165,7 @@ static void _mqtt_disconnected_callback(void *param1,
 }
 
 
-static int AWS_SERVICE_mqtt_publish(const char *msg, size_t len)
+static int AWS_SERVICE_mqtt_publish(const void *msg, size_t len)
 {
   if (!_connected)
   {
@@ -200,6 +200,30 @@ static int AWS_SERVICE_mqtt_publish(const char *msg, size_t len)
   }
 
   return EXIT_SUCCESS;
+}
+
+static int AWS_SERVICE_publish_image(image_info_t *image_info)
+{
+  if (!_initialized || !_connected)
+  {
+    return EXIT_FAILURE;
+  }
+
+  if (NULL == image_info)
+  {
+    ESP_LOGW("AWS_SERVICE", "Provided image was NULL.\n");
+    return EXIT_FAILURE;
+  }
+
+  if(xSemaphoreTake(_payload_mutex, (TickType_t) 10U) == pdTRUE)
+  {
+    AWS_SERVICE_mqtt_publish(image_info->buf, image_info->len);
+    xSemaphoreGive(_payload_mutex);
+
+    return EXIT_SUCCESS;
+  }
+
+  return EXIT_FAILURE;
 }
 
 static int AWS_SERVICE_publish_info(message_info_t *info)
@@ -307,7 +331,10 @@ static int AWS_SERVICE_recv_msg(uint8_t cmd, void* arg)
       return AWS_SERVICE_mqtt_connect();
 
     case (AWS_SERVICE_CMD_MQTT_PUBLISH_MESSAGE):
-      return AWS_SERVICE_publish_info(arg);
+      return AWS_SERVICE_publish_info((message_info_t*)arg);
+
+    case (AWS_SERVICE_CMD_MQTT_PUBLISH_IMAGE):
+      return AWS_SERVICE_publish_image((image_info_t*)arg);
 
   }
   return EXIT_FAILURE;

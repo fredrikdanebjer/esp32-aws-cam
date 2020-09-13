@@ -1,5 +1,5 @@
 /*
-* @file system_controller.h
+* @file camera_service.h
 *
 * The MIT License (MIT)
 *
@@ -24,30 +24,14 @@
 * THE SOFTWARE.
 */
 
-#ifndef SYSTEM_CONTROLLER__H
-#define SYSTEM_CONTROLLER__H
+#ifndef CAMERA_SERVICE__H
+#define CAMERA_SERVICE__H
 
-#include <stdint.h>
+#define CAM_SERVICE_CMD_CAPTURE_SEND_IMAGE  (0U)
 
-typedef struct service_interface {
-  int (*init_service)();
-  int (*deinit_service)();
-  int (*recv_msg)(uint8_t, void*);
-  uint8_t service_id;
-} sc_service_t;
+/*
+* @brief Registers the camera service to the system controller.
+*/
+void CAM_SERVICE_register();
 
-enum {
-  sc_service_wifi,
-  sc_service_aws,
-  sc_service_camera,
-  sc_service_count
-} sc_service_list_t;
-
-int SC_init();
-int SC_deinit();
-int SC_register_service(sc_service_t *service);
-int SC_deregister_service(uint8_t service_id);
-void SC_run();
-int SC_send_cmd(uint8_t sid, uint8_t cmd, void* arg);
-
-#endif /* ifndef SYSTEM_CONTROLLER__H */
+#endif /* ifndef CAMERA_SERVICE__H */
