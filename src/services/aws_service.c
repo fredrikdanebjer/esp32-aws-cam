@@ -60,10 +60,12 @@
 
 #define EYE_PUBLISH_MAX_LEN           (0x100U)
 
-#define EYE_INFO_MSG                  "{"\
-                                        "\"id\":\"%s\","\
-                                        "\"msg\":\"%s\""\
-                                      "}"
+#define EYE_INFO_MSG_ID_FORMAT        "%s"
+#define EYE_INFO_MSG_MSG_FORMAT       "%s"
+#define EYE_INFO_MSG                  ("{"\
+                                        "\"id\":\"" EYE_INFO_MSG_ID_FORMAT "\","\
+                                        "\"msg\":\"" EYE_INFO_MSG_MSG_FORMAT "\""\
+                                      "}")
 
 static IotMqttConnection_t _mqtt_connection;
 static uint8_t _initialized = 0;
@@ -200,10 +202,22 @@ static int AWS_SERVICE_mqtt_publish(const char *msg, size_t len)
   return EXIT_SUCCESS;
 }
 
-static int AWS_SERVICE_publish_info(const char *info)
+static int AWS_SERVICE_publish_info(message_info_t *info)
 {
   if (!_initialized || !_connected)
   {
+    return EXIT_FAILURE;
+  }
+
+  if (NULL == info)
+  {
+    ESP_LOGW("AWS_SERVICE", "Could not create publish info message, NULL input.\n");
+    return EXIT_FAILURE;
+  }
+
+  if ((EYE_PUBLISH_MAX_LEN - (sizeof(EYE_INFO_MSG) - strlen(EYE_INFO_MSG_ID_FORMAT) - strlen(EYE_INFO_MSG_MSG_FORMAT))) < info->msg_len)
+  {
+    ESP_LOGE("AWS_SERVICE", "Could not create publish info message, input too large.\n");
     return EXIT_FAILURE;
   }
 
@@ -213,7 +227,7 @@ static int AWS_SERVICE_publish_info(const char *info)
   {
     memset(_payload, '\0', EYE_PUBLISH_MAX_LEN);
 
-    len = snprintf(_payload, EYE_PUBLISH_MAX_LEN, EYE_INFO_MSG, FSU_EYE_AWS_IOT_THING_NAME, info);
+    len = snprintf(_payload, EYE_PUBLISH_MAX_LEN, EYE_INFO_MSG, FSU_EYE_AWS_IOT_THING_NAME, info->msg);
     if (len > 0)
     {
       AWS_SERVICE_mqtt_publish(_payload, len);
@@ -285,15 +299,15 @@ static int AWS_SERVICE_mqtt_connect()
   return EXIT_SUCCESS;
 }
 
-static int AWS_SERVICE_recv_msg(uint8_t cmd)
+static int AWS_SERVICE_recv_msg(uint8_t cmd, void* arg)
 {
   switch (cmd)
   {
-    case (0):
+    case(AWS_SERVICE_CMD_MQTT_CONNECT):
       return AWS_SERVICE_mqtt_connect();
 
-    case (1):
-      return AWS_SERVICE_publish_info("Hello from FSU-Eye");
+    case (AWS_SERVICE_CMD_MQTT_PUBLISH_MESSAGE):
+      return AWS_SERVICE_publish_info(arg);
 
   }
   return EXIT_FAILURE;

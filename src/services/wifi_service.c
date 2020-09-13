@@ -57,7 +57,7 @@ static int WIFI_SERVICE_deinit()
   return FE_WIFI_deinit();
 }
 
-static int WIFI_SERVICE_recv_msg(uint8_t cmd)
+static int WIFI_SERVICE_recv_msg(uint8_t cmd, void* arg)
 {
   return EXIT_SUCCESS;
 }

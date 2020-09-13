@@ -108,14 +108,14 @@ int SC_deregister_service(uint8_t service_id)
   return _services[service_id].deinit_service(NULL);
 }
 
-int SC_send_cmd(uint8_t sid, uint8_t cmd)
+int SC_send_cmd(uint8_t sid, uint8_t cmd, void* arg)
 {
   if (sid >= sc_service_count)
   {
     return EXIT_FAILURE;
   }
 
-  return _services[sid].recv_msg(cmd);
+  return _services[sid].recv_msg(cmd, arg);
 }
 
 void SC_run()
