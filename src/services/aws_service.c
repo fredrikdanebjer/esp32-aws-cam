@@ -49,22 +49,24 @@
 #define PUBLISH_RETRY_LIMIT           (1U)
 #define PUBLISH_RETRY_MS              (1000U)
 
-#define FSU_EYE_TOPIC_ROOT            "fsu/eye"
+#define FSU_EYE_TOPIC_ROOT            "fsu/eye/" FSU_EYE_AWS_IOT_THING_NAME
 #define FSU_EYE_TOPIC_LWT             (FSU_EYE_TOPIC_ROOT "/lwt")
 #define FSU_EYE_TOPIC_INFO            (FSU_EYE_TOPIC_ROOT "/info")
+#define FSU_EYE_TOPIC_IMAGE           (FSU_EYE_TOPIC_ROOT "/image")
 
 #define LWT_MESSAGE                   ("{"\
                                           "\"id\":\"" FSU_EYE_AWS_IOT_THING_NAME "\"" \
                                           "\"message\":\"LWT\"" \
                                        "}")
 
-#define EYE_PUBLISH_MAX_LEN           (0x100U)
+#define EYE_PUBLISH_MAX_LEN           (0x4C00U)
 
-#define EYE_INFO_MSG_ID_FORMAT        "%s"
-#define EYE_INFO_MSG_MSG_FORMAT       "%s"
+#define EYE_MSG_ID_FORMAT             "%s"
+#define EYE_MSG_INFO_FORMAT           "%s"
+
 #define EYE_INFO_MSG                  ("{"\
-                                         "\"id\":\"" EYE_INFO_MSG_ID_FORMAT "\","\
-                                         "\"msg\":\"" EYE_INFO_MSG_MSG_FORMAT "\""\
+                                         "\"id\":\"" EYE_MSG_ID_FORMAT "\","\
+                                         "\"msg\":\"" EYE_MSG_INFO_FORMAT "\""\
                                        "}")
 
 static IotMqttConnection_t _mqtt_connection;
@@ -165,7 +167,7 @@ static void _mqtt_disconnected_callback(void *param1,
 }
 
 
-static int AWS_SERVICE_mqtt_publish(const void *msg, size_t len)
+static int AWS_SERVICE_mqtt_publish(const void *msg, size_t len, const char *topic, size_t topic_len)
 {
   if (!_connected)
   {
@@ -181,8 +183,8 @@ static int AWS_SERVICE_mqtt_publish(const void *msg, size_t len)
   publish_complete.pCallbackContext = NULL;
 
   publish_info.qos = IOT_MQTT_QOS_1;
-  publish_info.pTopicName = FSU_EYE_TOPIC_INFO;
-  publish_info.topicNameLength = strlen(FSU_EYE_TOPIC_INFO);
+  publish_info.pTopicName = topic;
+  publish_info.topicNameLength = topic_len;
   publish_info.retryMs = PUBLISH_RETRY_MS;
   publish_info.retryLimit = PUBLISH_RETRY_LIMIT;
   publish_info.pPayload = msg;
@@ -217,7 +219,7 @@ static int AWS_SERVICE_publish_image(image_info_t *image_info)
 
   if(xSemaphoreTake(_payload_mutex, (TickType_t) 10U) == pdTRUE)
   {
-    AWS_SERVICE_mqtt_publish(image_info->buf, image_info->len);
+    AWS_SERVICE_mqtt_publish(image_info->buf, image_info->len, FSU_EYE_TOPIC_IMAGE, strlen(FSU_EYE_TOPIC_IMAGE));
     xSemaphoreGive(_payload_mutex);
 
     return EXIT_SUCCESS;
@@ -239,7 +241,7 @@ static int AWS_SERVICE_publish_info(message_info_t *info)
     return EXIT_FAILURE;
   }
 
-  if ((EYE_PUBLISH_MAX_LEN - (sizeof(EYE_INFO_MSG) - strlen(EYE_INFO_MSG_ID_FORMAT) - strlen(EYE_INFO_MSG_MSG_FORMAT))) < info->msg_len)
+  if ((EYE_PUBLISH_MAX_LEN - (sizeof(EYE_INFO_MSG) - strlen(EYE_MSG_ID_FORMAT) - strlen(EYE_MSG_INFO_FORMAT))) < info->msg_len)
   {
     ESP_LOGE("AWS_SERVICE", "Could not create publish info message, input too large.\n");
     return EXIT_FAILURE;
@@ -254,7 +256,7 @@ static int AWS_SERVICE_publish_info(message_info_t *info)
     len = snprintf(_payload, EYE_PUBLISH_MAX_LEN, EYE_INFO_MSG, FSU_EYE_AWS_IOT_THING_NAME, info->msg);
     if (len > 0)
     {
-      AWS_SERVICE_mqtt_publish(_payload, len);
+      AWS_SERVICE_mqtt_publish(_payload, len, FSU_EYE_TOPIC_INFO, strlen(FSU_EYE_TOPIC_INFO));
       xSemaphoreGive(_payload_mutex);
 
       return EXIT_SUCCESS;

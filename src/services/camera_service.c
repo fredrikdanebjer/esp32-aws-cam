@@ -75,7 +75,7 @@ static camera_config_t camera_config = {
   .ledc_channel = LEDC_CHANNEL_0,
 
   .pixel_format = PIXFORMAT_JPEG,
-  .frame_size = FRAMESIZE_QVGA,
+  .frame_size = FRAMESIZE_VGA,
 
   .jpeg_quality = 12, //0-63 lower number means higher quality
   .fb_count = 1 //if more than one, i2s runs in continuous mode. Use only with JPEG
