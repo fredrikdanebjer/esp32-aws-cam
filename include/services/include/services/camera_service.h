@@ -1,5 +1,5 @@
 /*
-* @file wifi_service.c
+* @file camera_service.h
 *
 * The MIT License (MIT)
 *
@@ -24,52 +24,14 @@
 * THE SOFTWARE.
 */
 
-#include "fe_wifi.h"
-#include "system_controller.h"
+#ifndef CAMERA_SERVICE__H
+#define CAMERA_SERVICE__H
 
-#include "fsu_eye_wifi_credentials.h"
+#define CAM_SERVICE_CMD_CAPTURE_SEND_IMAGE  (0U)
 
-#include "esp_log.h"
+/*
+* @brief Registers the camera service to the system controller.
+*/
+void CAM_SERVICE_register();
 
-static int WIFI_SERVICE_init()
-{
-  int status = FE_WIFI_init(FSU_EYE_WIFI_SSID,
-                            FSU_EYE_WIFI_PASSWORD,
-                            FSU_EYE_WIFI_SECURITY);
-
-  if (EXIT_SUCCESS != status)
-  {
-    return status;
-  }
-
-  return FE_WIFI_connect();
-}
-
-static int WIFI_SERVICE_deinit()
-{
-  int status = FE_WIFI_disconnect();
-
-  if (EXIT_SUCCESS != status)
-  {
-    return status;
-  }
-
-  return FE_WIFI_deinit();
-}
-
-static int WIFI_SERVICE_recv_msg(uint8_t cmd, void* arg)
-{
-  return EXIT_SUCCESS;
-}
-
-void WIFI_SERVICE_register()
-{
-  sc_service_t ws;
-
-  ws.init_service = WIFI_SERVICE_init;
-  ws.deinit_service = WIFI_SERVICE_deinit;
-  ws.recv_msg = WIFI_SERVICE_recv_msg;
-  ws.service_id = sc_service_wifi;
-
-  SC_register_service(&ws);
-}
+#endif /* ifndef CAMERA_SERVICE__H */

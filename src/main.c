@@ -24,12 +24,14 @@
 * THE SOFTWARE.
 */
 
+#include <string.h>
 #include <stdint.h>
 #include "xtensa/core-macros.h"
 #include "fe_sys.h"
 #include "system_controller.h"
 #include "wifi_service.h"
 #include "aws_service.h"
+#include "camera_service.h"
 #include "platform/iot_threads.h"
 #include "iot_logging_task.h"
 
@@ -47,6 +49,10 @@
 // CPU Ticks per second
 #define CPU_SPEED_SECONDS (160000000U)
 
+#define EYE_APP_PUBLISH_INFO  "Hello, from FSU App"
+
+static message_info_t publish_msg;
+
 static void eye_app(void * pArgument)
 {
   // Initialize AWS IoT SDK
@@ -58,6 +64,11 @@ static void eye_app(void * pArgument)
   // Registers services to System Controllers
   WIFI_SERVICE_register();
   AWS_SERVICE_register();
+  CAM_SERVICE_register();
+
+  memset(&publish_msg, 0, sizeof(message_info_t));
+  publish_msg.msg = EYE_APP_PUBLISH_INFO;
+  publish_msg.msg_len = strlen(EYE_APP_PUBLISH_INFO);
 
   uint64_t last_time = (uint64_t) XTHAL_GET_CCOUNT();
 
@@ -69,10 +80,13 @@ static void eye_app(void * pArgument)
     ESP_LOGI("FSU_EYE", "Eye App Tick!\n");
 
     ESP_LOGI("FSU_EYE", "Ensuring connected!\n");
-    SC_send_cmd(sc_service_aws, 0);
+    SC_send_cmd(sc_service_aws, AWS_SERVICE_CMD_MQTT_CONNECT, NULL);
 
     ESP_LOGI("FSU_EYE", "Sending Info!\n");
-    SC_send_cmd(sc_service_aws, 1);
+    SC_send_cmd(sc_service_aws, AWS_SERVICE_CMD_MQTT_PUBLISH_MESSAGE, &publish_msg);
+
+    ESP_LOGI("FSU_EYE", "Taking Picture!\n");
+    SC_send_cmd(sc_service_camera, CAM_SERVICE_CMD_CAPTURE_SEND_IMAGE, NULL);
   }
 }
 

@@ -37,10 +37,11 @@
 #include "fsu_eye_aws_credentials.h"
 #include "private/iot_default_root_certificates.h"
 
+#include "aws_dev_mode_key_provisioning.h"
 #include "esp_log.h"
 
 #define FSU_EYE_NETWORK_INTERFACE     IOT_NETWORK_INTERFACE_AFR
-#define FSU_EYE_AWS_IOT_ALPN_MQTT    "x-amzn-mqtt-ca"
+#define FSU_EYE_AWS_IOT_ALPN_MQTT     "x-amzn-mqtt-ca"
 
 #define KEEP_ALIVE_SECONDS            (60U)
 #define MQTT_TIMEOUT_MS               (5000U)
@@ -48,21 +49,25 @@
 #define PUBLISH_RETRY_LIMIT           (1U)
 #define PUBLISH_RETRY_MS              (1000U)
 
-#define FSU_EYE_TOPIC_ROOT            "fsu/eye"
+#define FSU_EYE_TOPIC_ROOT            "fsu/eye/" FSU_EYE_AWS_IOT_THING_NAME
 #define FSU_EYE_TOPIC_LWT             (FSU_EYE_TOPIC_ROOT "/lwt")
 #define FSU_EYE_TOPIC_INFO            (FSU_EYE_TOPIC_ROOT "/info")
+#define FSU_EYE_TOPIC_IMAGE           (FSU_EYE_TOPIC_ROOT "/image")
 
 #define LWT_MESSAGE                   ("{"\
                                           "\"id\":\"" FSU_EYE_AWS_IOT_THING_NAME "\"" \
                                           "\"message\":\"LWT\"" \
                                        "}")
 
-#define EYE_PUBLISH_MAX_LEN           (0x100U)
+#define EYE_PUBLISH_MAX_LEN           (0x4C00U)
 
-#define EYE_INFO_MSG                  "{"\
-                                        "\"id\":\"%s\","\
-                                        "\"msg\":\"%s\""\
-                                      "}"
+#define EYE_MSG_ID_FORMAT             "%s"
+#define EYE_MSG_INFO_FORMAT           "%s"
+
+#define EYE_INFO_MSG                  ("{"\
+                                         "\"id\":\"" EYE_MSG_ID_FORMAT "\","\
+                                         "\"msg\":\"" EYE_MSG_INFO_FORMAT "\""\
+                                       "}")
 
 static IotMqttConnection_t _mqtt_connection;
 static uint8_t _initialized = 0;
@@ -88,6 +93,30 @@ static IotNetworkCredentials_t network_credentials = {
   .privateKeySize = sizeof(FSU_EYE_AWS_PRIVATE_KEY)
 };
 
+// Adds the Certificate and Private Key to the internal PKCS11 and mbedtls
+// utilized lists. The credentials seems to be stored in NVS.
+static int AWS_SERVICE_PKCS11_provision_key(void)
+{
+  ProvisioningParams_t provision_params;
+
+  memset(&provision_params, 0, sizeof(provision_params));
+
+  provision_params.pucClientPrivateKey = (uint8_t*) FSU_EYE_AWS_PRIVATE_KEY;
+  provision_params.pucClientCertificate = (uint8_t*) FSU_EYE_AWS_CLIENT_CERT;
+  provision_params.pucJITPCertificate = NULL;
+  provision_params.ulClientPrivateKeyLength = sizeof(FSU_EYE_AWS_PRIVATE_KEY);
+  provision_params.ulClientCertificateLength = sizeof(FSU_EYE_AWS_CLIENT_CERT);
+  provision_params.ulJITPCertificateLength = 0;
+
+  ESP_LOGI("AWS_SERVICE", "PKCS11 PrKey strlen & size: %d - %d.\n", sizeof(FSU_EYE_AWS_PRIVATE_KEY), strlen(FSU_EYE_AWS_PRIVATE_KEY));
+
+  if (vAlternateKeyProvisioning(&provision_params) != CKR_OK)
+  {
+    return EXIT_FAILURE;
+  }
+
+  return EXIT_SUCCESS;
+}
 
 static int AWS_SERVICE_init()
 {
@@ -106,6 +135,10 @@ static int AWS_SERVICE_init()
   _initialized = 1;
   memset(_payload, '\0', EYE_PUBLISH_MAX_LEN);
   _payload_mutex = xSemaphoreCreateMutex();
+
+  // For some reason the MQTT Connect method does not utilize the private key,
+  // it is instead always fetched from the internal PKCS11 provisioned list
+  AWS_SERVICE_PKCS11_provision_key();
 
   return EXIT_SUCCESS;
 }
@@ -134,7 +167,7 @@ static void _mqtt_disconnected_callback(void *param1,
 }
 
 
-static int AWS_SERVICE_mqtt_publish(const char *msg, size_t len)
+static int AWS_SERVICE_mqtt_publish(const void *msg, size_t len, const char *topic, size_t topic_len)
 {
   if (!_connected)
   {
@@ -150,8 +183,8 @@ static int AWS_SERVICE_mqtt_publish(const char *msg, size_t len)
   publish_complete.pCallbackContext = NULL;
 
   publish_info.qos = IOT_MQTT_QOS_1;
-  publish_info.pTopicName = FSU_EYE_TOPIC_INFO;
-  publish_info.topicNameLength = strlen(FSU_EYE_TOPIC_INFO);
+  publish_info.pTopicName = topic;
+  publish_info.topicNameLength = topic_len;
   publish_info.retryMs = PUBLISH_RETRY_MS;
   publish_info.retryLimit = PUBLISH_RETRY_LIMIT;
   publish_info.pPayload = msg;
@@ -171,10 +204,46 @@ static int AWS_SERVICE_mqtt_publish(const char *msg, size_t len)
   return EXIT_SUCCESS;
 }
 
-static int AWS_SERVICE_publish_info(const char *info)
+static int AWS_SERVICE_publish_image(image_info_t *image_info)
 {
   if (!_initialized || !_connected)
   {
+    return EXIT_FAILURE;
+  }
+
+  if (NULL == image_info)
+  {
+    ESP_LOGW("AWS_SERVICE", "Provided image was NULL.\n");
+    return EXIT_FAILURE;
+  }
+
+  if(xSemaphoreTake(_payload_mutex, (TickType_t) 10U) == pdTRUE)
+  {
+    AWS_SERVICE_mqtt_publish(image_info->buf, image_info->len, FSU_EYE_TOPIC_IMAGE, strlen(FSU_EYE_TOPIC_IMAGE));
+    xSemaphoreGive(_payload_mutex);
+
+    return EXIT_SUCCESS;
+  }
+
+  return EXIT_FAILURE;
+}
+
+static int AWS_SERVICE_publish_info(message_info_t *info)
+{
+  if (!_initialized || !_connected)
+  {
+    return EXIT_FAILURE;
+  }
+
+  if (NULL == info)
+  {
+    ESP_LOGW("AWS_SERVICE", "Could not create publish info message, NULL input.\n");
+    return EXIT_FAILURE;
+  }
+
+  if ((EYE_PUBLISH_MAX_LEN - (sizeof(EYE_INFO_MSG) - strlen(EYE_MSG_ID_FORMAT) - strlen(EYE_MSG_INFO_FORMAT))) < info->msg_len)
+  {
+    ESP_LOGE("AWS_SERVICE", "Could not create publish info message, input too large.\n");
     return EXIT_FAILURE;
   }
 
@@ -184,10 +253,10 @@ static int AWS_SERVICE_publish_info(const char *info)
   {
     memset(_payload, '\0', EYE_PUBLISH_MAX_LEN);
 
-    len = snprintf(_payload, EYE_PUBLISH_MAX_LEN, EYE_INFO_MSG, FSU_EYE_AWS_IOT_THING_NAME, info);
+    len = snprintf(_payload, EYE_PUBLISH_MAX_LEN, EYE_INFO_MSG, FSU_EYE_AWS_IOT_THING_NAME, info->msg);
     if (len > 0)
     {
-      AWS_SERVICE_mqtt_publish(_payload, len);
+      AWS_SERVICE_mqtt_publish(_payload, len, FSU_EYE_TOPIC_INFO, strlen(FSU_EYE_TOPIC_INFO));
       xSemaphoreGive(_payload_mutex);
 
       return EXIT_SUCCESS;
@@ -256,15 +325,18 @@ static int AWS_SERVICE_mqtt_connect()
   return EXIT_SUCCESS;
 }
 
-static int AWS_SERVICE_recv_msg(uint8_t cmd)
+static int AWS_SERVICE_recv_msg(uint8_t cmd, void* arg)
 {
   switch (cmd)
   {
-    case (0):
+    case(AWS_SERVICE_CMD_MQTT_CONNECT):
       return AWS_SERVICE_mqtt_connect();
 
-    case (1):
-      return AWS_SERVICE_publish_info("Hello from FSU-Eye");
+    case (AWS_SERVICE_CMD_MQTT_PUBLISH_MESSAGE):
+      return AWS_SERVICE_publish_info((message_info_t*)arg);
+
+    case (AWS_SERVICE_CMD_MQTT_PUBLISH_IMAGE):
+      return AWS_SERVICE_publish_image((image_info_t*)arg);
 
   }
   return EXIT_FAILURE;

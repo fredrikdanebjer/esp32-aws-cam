@@ -28,6 +28,24 @@
 #define AWS_SERVICE__H_
 
 #include "system_controller.h"
+#include <stdlib.h>
+
+#define AWS_SERVICE_CMD_MQTT_CONNECT          (0U)
+#define AWS_SERVICE_CMD_MQTT_PUBLISH_MESSAGE  (1U)
+#define AWS_SERVICE_CMD_MQTT_PUBLISH_IMAGE    (2U)
+
+typedef struct message_info {
+  char* msg;
+  uint16_t msg_len; // Length of message, excluding terminator
+} message_info_t;
+
+typedef struct image_info {
+  uint8_t* buf;
+  size_t len;
+  size_t width;
+  size_t height;
+  uint8_t format;
+} image_info_t;
 
 void AWS_SERVICE_register();
 
