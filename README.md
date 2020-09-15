@@ -121,3 +121,4 @@ https://randomnerdtutorials.com/esp32-cam-video-streaming-face-recognition-ardui
 - Receive commands based on SystemController interface
 - Battery support
 - Doxygen
+- All sub-folders in src as IDF components

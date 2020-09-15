@@ -8,7 +8,8 @@ file(GLOB SOURCES
         "src/*.c"
         "src/fe_system/*.c"
         "src/services/*.c"
-        "src/aws/*.c"
+        "src/rtos/*.c"
+        "src/3rd_party/aws/*.c"
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
@@ -16,12 +17,9 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 set(INCLUDE_DIRS ${INCLUDE_DIRS}
         "config/aws"
         "config/wifi"
-        "include/aws"
-        "include/fe_system/include"
-        "include/services/include/services"
-        "external/freertos/demos/include"
-        "external/freertos/demos/network_manager"
-        "external/freertos/demos/dev_mode_key_provisioning/include"
+        "include/3rd_party/aws"
+        "include/fe_system"
+        "include/services"
 )
 
 include_directories(${INCLUDE_DIRS})
