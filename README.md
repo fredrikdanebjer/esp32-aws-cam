@@ -114,3 +114,10 @@ git push origin --tags
 ## Useful Links
 
 https://randomnerdtutorials.com/esp32-cam-video-streaming-face-recognition-arduino-ide/
+
+## TODO / Wanted list
+
+- OTA over AWS Jobs
+- Receive commands based on SystemController interface
+- Battery support
+- Doxygen
