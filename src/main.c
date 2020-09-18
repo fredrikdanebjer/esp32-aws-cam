@@ -80,7 +80,7 @@ static void eye_app(void * pArgument)
     ESP_LOGI("FSU_EYE", "Eye App Tick!\n");
 
     ESP_LOGI("FSU_EYE", "Ensuring connected!\n");
-    SC_send_cmd(sc_service_aws, AWS_SERVICE_CMD_MQTT_CONNECT, NULL);
+    SC_send_cmd(sc_service_aws, AWS_SERVICE_CMD_MQTT_CONNECT_SUBSCRIBE, NULL);
 
     ESP_LOGI("FSU_EYE", "Sending Info!\n");
     SC_send_cmd(sc_service_aws, AWS_SERVICE_CMD_MQTT_PUBLISH_MESSAGE, &publish_msg);

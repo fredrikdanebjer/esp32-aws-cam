@@ -37,7 +37,7 @@ typedef struct service_interface {
 } sc_service_t;
 
 enum {
-  sc_service_wifi,
+  sc_service_wifi = 1,
   sc_service_aws,
   sc_service_camera,
   sc_service_count

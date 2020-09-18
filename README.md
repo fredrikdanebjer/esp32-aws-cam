@@ -118,9 +118,9 @@ https://randomnerdtutorials.com/esp32-cam-video-streaming-face-recognition-ardui
 ## TODO / Wanted list
 
 - OTA over AWS Jobs
-- Receive commands based on SystemController interface
 - Battery support
 - Doxygen
 - All sub-folders in src as IDF components
 - BLE connection that allows settings WIFI
 - Send Failed info
+- Add a command list in System Controller, callback should not to heavy processing
