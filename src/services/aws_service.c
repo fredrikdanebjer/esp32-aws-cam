@@ -40,6 +40,9 @@
 #include "aws_dev_mode_key_provisioning.h"
 #include "esp_log.h"
 
+#include "jsmn.h"
+#include "stdbool.h"
+
 #define FSU_EYE_NETWORK_INTERFACE     IOT_NETWORK_INTERFACE_AFR
 #define FSU_EYE_AWS_IOT_ALPN_MQTT     "x-amzn-mqtt-ca"
 
@@ -49,7 +52,24 @@
 #define PUBLISH_RETRY_LIMIT           (1U)
 #define PUBLISH_RETRY_MS              (1000U)
 
+#define TOPIC_FILTER_COUNT            1
+
 #define FSU_EYE_TOPIC_ROOT            "fsu/eye/" FSU_EYE_AWS_IOT_THING_NAME
+
+#define FSU_EYE_SUBSCRIBE_COMMAND     (FSU_EYE_TOPIC_ROOT "/r/command")
+/**
+ * /r/command messages are expected to have this form:
+ * {
+ *  "id":"thing_name",      // The device thing name
+ *  "service_id":"service", // ID of the service to perform
+ *  "command_id":"command"  // Command ID to perform on the service
+ * }
+*/
+#define COMMAND_MESSAGE_TOKENS        (7U)
+#define COMMAND_MESSAGE_ID_FIELD      "id"
+#define COMMAND_MESSAGE_SERVICE_FIELD "service_id"
+#define COMMAND_MESSAGE_COMMAND_FIELD "command_id"
+
 #define FSU_EYE_TOPIC_LWT             (FSU_EYE_TOPIC_ROOT "/lwt")
 #define FSU_EYE_TOPIC_INFO            (FSU_EYE_TOPIC_ROOT "/info")
 #define FSU_EYE_TOPIC_IMAGE           (FSU_EYE_TOPIC_ROOT "/image")
@@ -60,6 +80,7 @@
                                        "}")
 
 #define EYE_PUBLISH_MAX_LEN           (0x4C00U)
+#define EYE_SUBSCRIBE_MAX_TOKENS      (0x10U)
 
 #define EYE_MSG_ID_FORMAT             "%s"
 #define EYE_MSG_INFO_FORMAT           "%s"
@@ -92,6 +113,18 @@ static IotNetworkCredentials_t network_credentials = {
   .pPrivateKey = FSU_EYE_AWS_PRIVATE_KEY,
   .privateKeySize = sizeof(FSU_EYE_AWS_PRIVATE_KEY)
 };
+
+// JSON Helper function, to check if a token is a sought after string
+static int _jsoneq(const char *json, jsmntok_t *tok, const char *s)
+{
+  if (JSMN_STRING == tok->type
+    && (int)strlen(s) == (tok->end - tok->start)
+    && strncmp(json + tok->start, s, tok->end - tok->start) == 0)
+  {
+    return true;
+  }
+  return false;
+}
 
 // Adds the Certificate and Private Key to the internal PKCS11 and mbedtls
 // utilized lists. The credentials seems to be stored in NVS.
@@ -153,19 +186,141 @@ static int AWS_SERVICE_deinit()
 }
 
 static void _publish_complete_callback(void *param1,
-                                       IotMqttCallbackParam_t *const pOperation)
+                                       IotMqttCallbackParam_t *const param)
 {
   ESP_LOGI("AWS_SERVICE", "MQTT publish complete!\n");
   _publish_complete = 1;
 }
 
+static void _mqtt_subscription_callback(void *param1,
+                                       IotMqttCallbackParam_t *const param)
+{
+  ESP_LOGI("AWS_SERVICE", "MQTT subscribe received: %.*s\n", param->u.message.info.payloadLength,
+                                                             (const char*) param->u.message.info.pPayload);
+
+  jsmn_parser parser;
+  jsmntok_t tokens[EYE_SUBSCRIBE_MAX_TOKENS];
+  int status = 0;
+  uint32_t service = 0;
+  uint32_t command = 0;
+  const char *payload = param->u.message.info.pPayload;
+
+
+  jsmn_init(&parser);
+  if ((status = jsmn_parse(&parser, payload, param->u.message.info.payloadLength, tokens, EYE_SUBSCRIBE_MAX_TOKENS)) < 0)
+  {
+    ESP_LOGW("AWS_SERVICE", "MQTT subscribe returned failed during parse with %d.", status);
+  }
+
+  if (strncmp(FSU_EYE_SUBSCRIBE_COMMAND, param->u.message.info.pTopicName, param->u.message.info.topicNameLength) == 0)
+  {
+    if (COMMAND_MESSAGE_TOKENS != status)
+    {
+      ESP_LOGW("AWS_SERVICE", "MQTT subscribe invalid command message, found %d tokens.", status);
+      return;
+    }
+    for (int i = 1; i < COMMAND_MESSAGE_TOKENS; ++i)
+    {
+      if (_jsoneq(payload, &tokens[i], COMMAND_MESSAGE_ID_FIELD))
+      {
+        if (!_jsoneq(payload, &tokens[i + 1], FSU_EYE_AWS_IOT_THING_NAME))
+        {
+          ESP_LOGW("AWS_SERVICE", "MQTT subscribe invalid ID received on commange message!");
+          return;
+        }
+      }
+      else if (_jsoneq(payload, &tokens[i], COMMAND_MESSAGE_SERVICE_FIELD))
+      {
+        service = strtoul(&payload[tokens[i + 1].start], NULL, 10);
+        if (0 == service)
+        {
+          ESP_LOGW("AWS_SERVICE", "MQTT subscribe invalid service received on commange message.");
+          return;
+        }
+      }
+      else if (_jsoneq(payload, &tokens[i], COMMAND_MESSAGE_COMMAND_FIELD))
+      {
+        command = strtoul(&payload[tokens[i + 1].start], NULL, 10);
+        if (0 == command)
+        {
+          ESP_LOGW("AWS_SERVICE", "MQTT subscribe invalid command received on commange message.");
+          return;
+        }
+      }
+      else
+      {
+        ESP_LOGW("AWS_SERVICE", "MQTT subscribe invalid command message token at index %d.", i);
+        return;
+      }
+      ++i;
+    }
+    ESP_LOGW("AWS_SERVICE", "MQTT subscribe issuing command %d to service %d.", command, service);
+    SC_send_cmd((uint8_t)service, (uint8_t)command, NULL);
+  }
+}
+
 static void _mqtt_disconnected_callback(void *param1,
-                                       IotMqttCallbackParam_t *const pOperation)
+                                       IotMqttCallbackParam_t *const param)
 {
   ESP_LOGI("AWS_SERVICE", "MQTT disconnection!\n");
   _connected = 0;
 }
 
+static int AWS_SERVICE_subscribe(IotMqttConnection_t mqtt_connection,
+                                 const char **topic_filters)
+{
+  int status = EXIT_SUCCESS;
+  IotMqttError_t subscription_status = IOT_MQTT_STATUS_PENDING;
+  IotMqttSubscription_t subscriptions[TOPIC_FILTER_COUNT] = {IOT_MQTT_SUBSCRIPTION_INITIALIZER};
+
+  // Set the members of the subscription list
+  for(int i = 0; i < TOPIC_FILTER_COUNT; ++i)
+  {
+    subscriptions[i].qos = IOT_MQTT_QOS_1;
+    subscriptions[i].pTopicFilter = topic_filters[i];
+    subscriptions[i].topicFilterLength = strlen(topic_filters[i]);
+    subscriptions[i].callback.pCallbackContext = NULL;
+    subscriptions[i].callback.function = _mqtt_subscription_callback;
+  }
+
+  subscription_status = IotMqtt_TimedSubscribe(mqtt_connection,
+                                              subscriptions,
+                                              TOPIC_FILTER_COUNT,
+                                              0,
+                                              MQTT_TIMEOUT_MS);
+
+  // Verify subscription statuses
+  switch(subscription_status)
+  {
+    case IOT_MQTT_SUCCESS:
+      ESP_LOGI("AWS_SERVICE", "Subscription succeeded!");
+      break;
+
+    case IOT_MQTT_SERVER_REFUSED:
+
+      // Check which subscriptions were rejected
+      for(int i = 0; i < TOPIC_FILTER_COUNT; ++i)
+      {
+        if(IotMqtt_IsSubscribed(mqtt_connection,
+                                subscriptions[i].pTopicFilter,
+                                subscriptions[i].topicFilterLength,
+                                NULL) == false)
+        {
+          ESP_LOGE("AWS_SERVICE", "Topic filter %.*s was rejected.",
+                        subscriptions[i].topicFilterLength,
+                        subscriptions[i].pTopicFilter);
+        }
+      }
+      status = EXIT_FAILURE;
+      break;
+
+    default:
+      status = EXIT_FAILURE;
+      break;
+  }
+
+  return status;
+}
 
 static int AWS_SERVICE_mqtt_publish(const void *msg, size_t len, const char *topic, size_t topic_len)
 {
@@ -325,19 +480,37 @@ static int AWS_SERVICE_mqtt_connect()
   return EXIT_SUCCESS;
 }
 
+static int AWS_SERVICE_mqtt_connect_subscribe()
+{
+  if (AWS_SERVICE_mqtt_connect() != EXIT_SUCCESS)
+  {
+    return EXIT_FAILURE;
+  }
+
+  const char *subscription_topics[TOPIC_FILTER_COUNT] =
+  {
+    FSU_EYE_SUBSCRIBE_COMMAND
+  };
+
+  if (AWS_SERVICE_subscribe(_mqtt_connection, subscription_topics) != EXIT_SUCCESS)
+  {
+    return EXIT_FAILURE;
+  }
+  return EXIT_SUCCESS;
+}
+
 static int AWS_SERVICE_recv_msg(uint8_t cmd, void* arg)
 {
   switch (cmd)
   {
-    case(AWS_SERVICE_CMD_MQTT_CONNECT):
-      return AWS_SERVICE_mqtt_connect();
+    case(AWS_SERVICE_CMD_MQTT_CONNECT_SUBSCRIBE):
+      return AWS_SERVICE_mqtt_connect_subscribe();
 
     case (AWS_SERVICE_CMD_MQTT_PUBLISH_MESSAGE):
       return AWS_SERVICE_publish_info((message_info_t*)arg);
 
     case (AWS_SERVICE_CMD_MQTT_PUBLISH_IMAGE):
       return AWS_SERVICE_publish_image((image_info_t*)arg);
-
   }
   return EXIT_FAILURE;
 }
