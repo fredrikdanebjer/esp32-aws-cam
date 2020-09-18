@@ -122,3 +122,5 @@ https://randomnerdtutorials.com/esp32-cam-video-streaming-face-recognition-ardui
 - Battery support
 - Doxygen
 - All sub-folders in src as IDF components
+- BLE connection that allows settings WIFI
+- Send Failed info
