@@ -31,7 +31,12 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#if (AFR_ESP_LWIP)
+#include "tcpip_adapter.h"
+#else
 #include "FreeRTOS_IP.h"
+#endif
+
 #include "FreeRTOSConfig.h"
 
 #include "nvs_flash.h"
@@ -45,6 +50,7 @@
 #define FE_SYS_LOGGING_MESSAGE_QUEUE_LENGTH    (32U)
 #define FE_SYS_LOGGING_TASK_STACK_SIZE         (configMINIMAL_STACK_SIZE * 4)
 
+#if (!AFR_ESP_LWIP)
 uint8_t _mac_addr[6] =
 {
     FSU_EYE_MAC_ADDR0,
@@ -83,7 +89,7 @@ static const uint8_t _dns_server_addr[4] =
     FSU_EYE_DNS_SERVER_ADDR2,
     FSU_EYE_DNS_SERVER_ADDR3
 };
-
+#endif
 
 static void FE_SYS_NVS_init()
 {
@@ -107,12 +113,17 @@ int FE_SYS_init()
                          tskIDLE_PRIORITY + 5,
                          FE_SYS_LOGGING_MESSAGE_QUEUE_LENGTH);
 
+#if (AFR_ESP_LWIP)
+  // Initialize the ESP LWIP TCP/IP Stack
+  tcpip_adapter_init();
+#else
   // Initialize the FreeRTOS IP Stack
   FreeRTOS_IPInit(_ip_addr,
                   _net_mask,
                   _gateway_addr,
                   _dns_server_addr,
                   _mac_addr);
+#endif
 
   // Initialize rest of FreeRTOS 
   if (SYSTEM_Init() != pdPASS)

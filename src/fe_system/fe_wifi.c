@@ -57,10 +57,10 @@ int FE_WIFI_init(char *ssid, char *passwd, WIFISecurity_t security)
   memcpy(_ssid, ssid, strlen(ssid) + 1);
   memcpy(_passwd, passwd, strlen(passwd) + 1);
 
-  wifi_credentials.pcSSID = _ssid;
-  wifi_credentials.ucSSIDLength = strlen(_ssid) + 1;
-  wifi_credentials.pcPassword = _passwd;
-  wifi_credentials.ucPasswordLength = strlen(_passwd) + 1;
+  memcpy(wifi_credentials.ucSSID, ssid, strlen(ssid));
+  wifi_credentials.ucSSIDLength = strlen(_ssid);
+  memcpy(wifi_credentials.xPassword.xWPA.cPassphrase, passwd, strlen(passwd));
+  wifi_credentials.xPassword.xWPA.ucLength = strlen(_passwd);
   wifi_credentials.xSecurity = security;
 
   if (WIFI_On() != eWiFiSuccess)

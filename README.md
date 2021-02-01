@@ -116,11 +116,9 @@ git push origin --tags
 https://randomnerdtutorials.com/esp32-cam-video-streaming-face-recognition-arduino-ide/
 
 ## TODO / Wanted list
-
+- HTTP Server for Home Assistant
 - OTA over AWS Jobs
-- Battery support
 - Doxygen
-- All sub-folders in src as IDF components
 - BLE connection that allows settings WIFI
 - Send Failed info
-- Add a command list in System Controller, callback should not to heavy processing
+- Add a command-list in System Controller which it polls, callback should not do heavy processing

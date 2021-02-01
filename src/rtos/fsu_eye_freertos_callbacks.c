@@ -26,7 +26,9 @@
 
 #include <FreeRTOS.h>
 #include <task.h>
+#if (!AFR_ESP_LWIP)
 #include <FreeRTOS_IP.h>
+#endif
 
 #include "esp_system.h"
 #include "esp_wifi.h"
@@ -95,6 +97,7 @@ void vApplicationDaemonTaskStartupHook(void)
 {
 }
 
+#if (!AFR_ESP_LWIP)
 void vApplicationPingReplyHook( ePingReplyStatus_t eStatus, uint16_t usIdentifier )
 {
 }
@@ -127,3 +130,4 @@ void vApplicationIPNetworkEventHook(eIPCallbackEvent_t eNetworkEvent)
         esp_event_send( &evt );
     }
 }
+#endif
