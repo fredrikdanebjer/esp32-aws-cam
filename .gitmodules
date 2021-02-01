@@ -8,6 +8,3 @@
 	path = external/freertos
 	url = https://github.com/aws/amazon-freertos.git
 	branch = release
-[submodule "external/esp-idf"]
-	path = external/esp-idf
-	url = https://github.com/espressif/esp-idf.git
