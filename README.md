@@ -1,7 +1,7 @@
 # FSU-Eye
 
 Frellie-Sees-yoU is a home survelleince project, intended to surveil your home with cameras.
-This project-part implements the Eye unit (imagination!) controllong the camera. It runs on a ESP32, connects to AWS and uploads images taken with its camera.
+This project-part implements the Eye unit (imagination!) controllong the camera. It runs on a ESP32, hosts a web server with video stream, connects to AWS and uploads images taken with its camera as well as exposes an interface from which it can be controlled.
 
 ## Prerequsites
 
@@ -116,9 +116,8 @@ git push origin --tags
 https://randomnerdtutorials.com/esp32-cam-video-streaming-face-recognition-arduino-ide/
 
 ## TODO / Wanted list
-- HTTP Server for Home Assistant
 - OTA over AWS Jobs
 - Doxygen
-- BLE connection that allows settings WIFI
 - Send Failed info
 - Add a command-list in System Controller which it polls, callback should not do heavy processing
+- All configurations to be placed in NVS, to be configurable over AWS connection
