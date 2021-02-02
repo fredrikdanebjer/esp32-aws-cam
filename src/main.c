@@ -41,13 +41,15 @@
 
 #include "iot_init.h"
 #include "esp_log.h"
+#include "esp_timer.h"
+
+#include <esp_http_server.h>
 
 // EYE App configs
 #define EYE_APP_TASK_PRIORITY     (tskIDLE_PRIORITY + 5U)
 #define EYE_APP_STACKSIZE         (0x1800U)
 
-// CPU Ticks per second
-#define CPU_SPEED_SECONDS (160000000U)
+#define MICROSECONDS              (1000000U)
 
 #define EYE_APP_PUBLISH_INFO  "Hello, from FSU App"
 
@@ -70,23 +72,34 @@ static void eye_app(void * pArgument)
   publish_msg.msg = EYE_APP_PUBLISH_INFO;
   publish_msg.msg_len = strlen(EYE_APP_PUBLISH_INFO);
 
-  uint64_t last_time = (uint64_t) XTHAL_GET_CCOUNT();
+  uint64_t current_tic = 0;
+  uint64_t last_time_camera = 0;
+  uint64_t last_time_message = 0;
 
   while (1)
   {
+    current_tic = esp_timer_get_time();
+
+    if (current_tic - last_time_message > MICROSECONDS * 60 * 15)
+    {
+      ESP_LOGI("FSU_EYE", "Ensuring connected!\n");
+      SC_send_cmd(sc_service_aws, AWS_SERVICE_CMD_MQTT_CONNECT_SUBSCRIBE, NULL);
+      ESP_LOGI("FSU_EYE", "Sending Info!\n");
+      SC_send_cmd(sc_service_aws, AWS_SERVICE_CMD_MQTT_PUBLISH_MESSAGE, &publish_msg);
+      last_time_message = esp_timer_get_time();
+    }
+
+    if (current_tic - last_time_camera > MICROSECONDS * 30)
+    {
+      ESP_LOGI("FSU_EYE", "Ensuring connected!\n");
+      SC_send_cmd(sc_service_aws, AWS_SERVICE_CMD_MQTT_CONNECT_SUBSCRIBE, NULL);
+      ESP_LOGI("FSU_EYE", "Taking Picture!\n");
+      SC_send_cmd(sc_service_camera, CAM_SERVICE_CMD_CAPTURE_SEND_IMAGE, NULL);
+      last_time_camera = esp_timer_get_time();
+    }
+
     // Inprecise wait using XT-HAL
-    while (((uint64_t) XTHAL_GET_CCOUNT()) - last_time < CPU_SPEED_SECONDS * 10) vTaskDelay(500 / portTICK_PERIOD_MS);
-    last_time = (uint64_t) XTHAL_GET_CCOUNT();
-    ESP_LOGI("FSU_EYE", "Eye App Tick!\n");
-
-    ESP_LOGI("FSU_EYE", "Ensuring connected!\n");
-    SC_send_cmd(sc_service_aws, AWS_SERVICE_CMD_MQTT_CONNECT_SUBSCRIBE, NULL);
-
-    ESP_LOGI("FSU_EYE", "Sending Info!\n");
-    SC_send_cmd(sc_service_aws, AWS_SERVICE_CMD_MQTT_PUBLISH_MESSAGE, &publish_msg);
-
-    ESP_LOGI("FSU_EYE", "Taking Picture!\n");
-    SC_send_cmd(sc_service_camera, CAM_SERVICE_CMD_CAPTURE_SEND_IMAGE, NULL);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
   }
 }
 
