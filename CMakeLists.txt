@@ -17,6 +17,7 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 set(INCLUDE_DIRS ${INCLUDE_DIRS}
         "config/aws"
         "config/wifi"
+        "config/http_server"
         "include/3rd_party/aws"
         "include/fe_system"
         "include/services"
@@ -33,6 +34,18 @@ set(AFR_BOARD espressif.esp32_devkitc CACHE INTERNAL "")
 get_filename_component(
     EXTRA_COMPONENT_DIRS
     "external/esp32-camera" ABSOLUTE
+)
+list(APPEND IDF_EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS})
+
+get_filename_component(
+    EXTRA_COMPONENT_DIRS
+    "external/freertos/vendors/espressif/esp-idf/components/nghttp" ABSOLUTE
+)
+list(APPEND IDF_EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS})
+
+get_filename_component(
+    EXTRA_COMPONENT_DIRS
+    "external/freertos/vendors/espressif/esp-idf/components/esp_http_server" ABSOLUTE
 )
 list(APPEND IDF_EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS})
 
