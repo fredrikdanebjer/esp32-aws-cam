@@ -47,6 +47,15 @@ typedef struct image_info {
   uint8_t format;
 } image_info_t;
 
+/*
+* @brief Registers the aws service to the system controller.
+*/
 void AWS_SERVICE_register();
+
+/*
+* @brief Runner function for OTA task. Demands the MQTT connection to be up, and
+* checked/re-connected from another source.
+*/
+void AWS_SERVICE_OTA_runner();
 
 #endif // AWS_SERVICE__H_

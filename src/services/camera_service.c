@@ -294,6 +294,8 @@ static int CAM_SERVICE_init()
     return EXIT_SUCCESS;
   }
 
+  _camera_mutex = xSemaphoreCreateMutex();
+
   if (CAM_SERVICE_camera_init() != EXIT_SUCCESS)
   {
     return EXIT_FAILURE;
@@ -304,7 +306,6 @@ static int CAM_SERVICE_init()
     return EXIT_FAILURE;
   }
 
-  _camera_mutex = xSemaphoreCreateMutex();
   _service_initialized = 1;
 
   return EXIT_SUCCESS;
@@ -312,6 +313,8 @@ static int CAM_SERVICE_init()
 
 static int CAM_SERVICE_deinit()
 {
+  CAM_SERVICE_camera_deinit();
+
   vSemaphoreDelete(_camera_mutex);
   _service_initialized = 0;
 

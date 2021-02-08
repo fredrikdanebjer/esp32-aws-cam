@@ -43,6 +43,11 @@
 #include "jsmn.h"
 #include "stdbool.h"
 
+#include "platform/iot_clock.h"
+#include "aws_iot_ota_agent.h"
+
+#include "iot_appversion32.h"
+
 #define FSU_EYE_NETWORK_INTERFACE     IOT_NETWORK_INTERFACE_AFR
 #define FSU_EYE_AWS_IOT_ALPN_MQTT     "x-amzn-mqtt-ca"
 
@@ -90,6 +95,14 @@
                                          "\"msg\":\"" EYE_MSG_INFO_FORMAT "\""\
                                        "}")
 
+// App version struct, used by OTA Agent to decide if new firmware is an upgrade
+const AppVersion32_t xAppFirmwareVersion =
+{
+    .u.x.ucMajor = APP_VERSION_MAJOR,
+    .u.x.ucMinor = APP_VERSION_MINOR,
+    .u.x.usBuild = APP_VERSION_BUILD,
+};
+
 static IotMqttConnection_t _mqtt_connection;
 static uint8_t _initialized = 0;
 static uint8_t _connected = 0;
@@ -100,6 +113,21 @@ static uint8_t _publish_complete;
 IotNetworkServerInfo_t aws_server_info = {
   .pHostName = FSU_EYE_AWS_MQTT_BROKER_ENDPOINT,
   .port = FSU_EYE_AWS_MQTT_BROKER_PORT  
+};
+
+static const char * _ota_state_dict[eOTA_AgentState_All] =
+{
+    "Init",
+    "Ready",
+    "RequestingJob",
+    "WaitingForJob",
+    "CreatingFile",
+    "RequestingFileBlock",
+    "WaitingForFileBlock",
+    "ClosingFile",
+    "Suspended",
+    "ShuttingDown",
+    "Stopped"
 };
 
 static IotNetworkCredentials_t network_credentials = {
@@ -324,7 +352,7 @@ static int AWS_SERVICE_subscribe(IotMqttConnection_t mqtt_connection,
 
 static int AWS_SERVICE_mqtt_publish(const void *msg, size_t len, const char *topic, size_t topic_len)
 {
-  if (!_connected)
+  if (!_initialized || !_connected)
   {
     return EXIT_FAILURE;
   }
@@ -430,7 +458,7 @@ static int AWS_SERVICE_mqtt_connect()
     return EXIT_SUCCESS;
   }
 
-  IotMqttError_t connect_status;
+  IotMqttError_t connect_status = IOT_MQTT_STATUS_PENDING;
   IotMqttNetworkInfo_t network_info = IOT_MQTT_NETWORK_INFO_INITIALIZER;
   IotMqttConnectInfo_t connect_info = IOT_MQTT_CONNECT_INFO_INITIALIZER;
   IotMqttPublishInfo_t will_info = IOT_MQTT_PUBLISH_INFO_INITIALIZER;
@@ -482,6 +510,11 @@ static int AWS_SERVICE_mqtt_connect()
 
 static int AWS_SERVICE_mqtt_connect_subscribe()
 {
+  if (_connected)
+  {
+    return EXIT_SUCCESS;
+  }
+
   if (AWS_SERVICE_mqtt_connect() != EXIT_SUCCESS)
   {
     return EXIT_FAILURE;
@@ -513,6 +546,96 @@ static int AWS_SERVICE_recv_msg(uint8_t cmd, void* arg)
       return AWS_SERVICE_publish_image((image_info_t*)arg);
   }
   return EXIT_FAILURE;
+}
+
+static void OTA_complete_callback(OTA_JobEvent_t event)
+{
+  ESP_LOGI("AWS SERVICE OTA", "Complete callback with %u\n", event);
+
+  if (event == eOTA_JobEvent_Activate)
+  {
+    ESP_LOGI("AWS SERVICE OTA", "Received eOTA_JobEvent_Activate callback from OTA Agent.\n");
+
+    // OTA job is completed, so we disconnect here before rebooting
+    if(_mqtt_connection != NULL)
+    {
+      IotMqtt_Disconnect(_mqtt_connection, false);
+    }
+
+    // We activate the new firmware, which will cause a reset
+    OTA_ActivateNewImage();
+
+    while (1)
+    {
+      // Nothing to do - should not get here, but we wait for reboot ... 
+    }
+  }
+  else if (event == eOTA_JobEvent_Fail)
+  {
+    ESP_LOGI("AWS SERVICE OTA", "Received eOTA_JobEvent_Fail callback from OTA Agent.\n");
+  }
+  else if (event == eOTA_JobEvent_StartTest)
+  {
+    ESP_LOGI("AWS SERVICE OTA", "Attempting to set image to Verified\n" );
+
+    if (OTA_SetImageState(eOTA_ImageState_Accepted) != kOTA_Err_None)
+    {
+      ESP_LOGI("AWS SERVICE OTA", "Error! Failed to set image state as accepted.\n" );
+    }
+  }
+}
+
+void AWS_SERVICE_OTA_runner()
+{
+  OTA_State_t ota_state;
+  static OTA_ConnectionContext_t ota_connection_context;
+
+  ESP_LOGI("AWS SERVICE OTA Agent", "Init, running version %u.%u.%u\n", APP_VERSION_MAJOR, APP_VERSION_MINOR, APP_VERSION_BUILD);
+
+  while (1)
+  {
+    while (!_connected)
+    {
+      // Wait for connection to come up, yield meanwhile
+      IotClock_SleepMs(1000);
+    }
+
+    // Copy connection context to OTA struct
+    ota_connection_context.pxNetworkInterface = ( void * ) FSU_EYE_NETWORK_INTERFACE;
+    ota_connection_context.pvNetworkCredentials = &network_credentials;
+    ota_connection_context.pvControlClient = _mqtt_connection;
+
+    // Check if OTA Agent was suspended, if so resume
+    if((ota_state = OTA_GetAgentState()) == eOTA_AgentState_Suspended)
+    {
+      OTA_Resume(&ota_connection_context);
+    }
+
+    // Initialize the OTA Agent
+    OTA_AgentInit((void*) (&ota_connection_context),
+                  (const uint8_t*) FSU_EYE_AWS_IOT_THING_NAME,
+                  OTA_complete_callback,
+                  (TickType_t) ~0);
+
+    while(((ota_state = OTA_GetAgentState()) != eOTA_AgentState_Stopped) && _connected)
+    {
+      IotClock_SleepMs(1000);
+      ESP_LOGI("AWS SERVICE OTA Agent", "State: %s  Rx: %u  Queued: %u  Processed: %u  Dropped: %u\r\n", _ota_state_dict[ota_state], OTA_GetPacketsReceived(), OTA_GetPacketsQueued(), OTA_GetPacketsProcessed(), OTA_GetPacketsDropped());
+    }
+
+    // Check if were disconnected, if so, suspend the OTA Agent.
+    if(!_connected)
+    {
+      if(OTA_Suspend() == kOTA_Err_None)
+      {
+        while((ota_state = OTA_GetAgentState()) != eOTA_AgentState_Suspended)
+        {
+          // Wait for OTA Agent to process the suspend event.
+          IotClock_SleepMs( 1000 );
+        }
+      }
+    }
+  }
 }
 
 void AWS_SERVICE_register()

@@ -4,6 +4,10 @@ set(PROJECT_NAME "FSU-Eye")
 
 project(${PROJECT_NAME})
 
+add_definitions(-DAPP_VERSION_MAJOR=${_VERSION_MAJOR})
+add_definitions(-DAPP_VERSION_MINOR=${_VERSION_MINOR})
+add_definitions(-DAPP_VERSION_BUILD=${_VERSION_BUILD})
+
 file(GLOB SOURCES
         "src/*.c"
         "src/fe_system/*.c"
@@ -58,6 +62,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         AFR::pkcs11
         AFR::platform
         AFR::mqtt
+        AFR::ota
         3rdparty::jsmn
         )
 

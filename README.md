@@ -91,6 +91,12 @@ Once the physical connection is setup you can flash using the provided bash scri
 ./build.sh flash
 ```
 
+### OTA
+
+Once you have flashed your initial firmware over UART you can flash with OTA in the future. To do so it is required that you have set up AWS structures accordingly (please refer to AWS guides on the subject).
+It do is required that the firmware version is increased, this happens automatically with every build IFF a new commit has been added or the tag has been increased.
+Furthermore, the necessary cert path for the OTA job is: 'config/aws/aws_ota_codesigner_certificate.h', while the firmware filepath is '.'.
+
 ### Monitor
 
 The device can be monitored from a HOST PC with the above explained physical connection. It is important that if the device was just flashed, the IO0 pin is disconnected from GND and the ESP32-S then reset.
