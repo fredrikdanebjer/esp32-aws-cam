@@ -3,6 +3,13 @@
 Frellie-Sees-yoU is a home survelleince project, intended to surveil your home with cameras.
 This project-part implements the Eye unit (imagination!) controllong the camera. It runs on a ESP32, hosts a web server with video stream, connects to AWS and uploads images taken with its camera as well as exposes an interface from which it can be controlled.
 
+## Features
+- HTTP Webserver with Camera Stream (to be used with e.g. Home Assistant)
+- AWS IoT MQTT based OTA Job
+- AWS IoT MQTT based periodic camera upload
+- AWS IoT MQTT based periodic diagnostic message upload
+- AWS IoT MQTT based control interface for receiving commands
+
 ## Prerequsites
 
 The following are confirmed working versions
@@ -93,9 +100,7 @@ Once the physical connection is setup you can flash using the provided bash scri
 
 ### OTA
 
-Once you have flashed your initial firmware over UART you can flash with OTA in the future. To do so it is required that you have set up AWS structures accordingly (please refer to AWS guides on the subject).
-It do is required that the firmware version is increased, this happens automatically with every build IFF a new commit has been added or the tag has been increased.
-Furthermore, the necessary cert path for the OTA job is: 'config/aws/aws_ota_codesigner_certificate.h', while the firmware filepath is '.'.
+Once you have flashed your initial firmware over UART you can, if desired, start to flash with OTA instead. There are some things that needs to be done in AWS, out of scope of this project, please read more in docs/OTA.md.
 
 ### Monitor
 
@@ -122,8 +127,7 @@ git push origin --tags
 https://randomnerdtutorials.com/esp32-cam-video-streaming-face-recognition-arduino-ide/
 
 ## TODO / Wanted list
-- OTA over AWS Jobs
 - Doxygen
-- Send Failed info
-- Add a command-list in System Controller which it polls, callback should not do heavy processing
+- Add a command-list to process in System Controller which it polls, callback should not do heavy processing
 - All configurations to be placed in NVS, to be configurable over AWS connection
+- WiFi setup over BLE
