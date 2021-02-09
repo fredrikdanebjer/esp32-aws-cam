@@ -54,7 +54,13 @@
 
 #define MICROSECONDS              (1000000U)
 
-#define EYE_APP_PUBLISH_INFO  "Hello, from FSU App"
+#define EYE_APP_PUBLISH_INFO      ("{" \
+                                      "\"fsu-eye version\":\"%u.%u.%u\"," \
+                                      "\"webserver local ip\":\"%d.%d.%d.%d\"," \
+                                      "\"uptime\":\"%llu\"" \
+                                  "}")
+
+#define EYE_APP_PUBLISH_INFO_LEN  (0x100U)
 
 static message_info_t publish_msg;
 
@@ -64,6 +70,9 @@ static void eye_app(void * pArgument)
   uint64_t last_time_camera = 0;
   uint64_t last_time_message = 0;
 
+  ip_address_t ip = {0};
+  char publish_info_msg[EYE_APP_PUBLISH_INFO_LEN] = {'\0'};
+
   while (1)
   {
     SC_send_cmd(sc_service_aws, AWS_SERVICE_CMD_MQTT_CONNECT_SUBSCRIBE, NULL);
@@ -71,6 +80,24 @@ static void eye_app(void * pArgument)
 
     if (current_tic - last_time_message > MICROSECONDS * 60 * 15)
     {
+      memset(&publish_msg, 0, sizeof(message_info_t));
+
+      if (FE_SYS_get_ip(&ip) != EXIT_SUCCESS)
+      {
+        memset(&ip, 0, sizeof(ip_address_t));
+      }
+
+      snprintf(publish_info_msg, EYE_APP_PUBLISH_INFO_LEN, EYE_APP_PUBLISH_INFO, APP_VERSION_MAJOR,
+                                                                                 APP_VERSION_MINOR,
+                                                                                 APP_VERSION_BUILD,
+                                                                                 ip.ip4_addr1,
+                                                                                 ip.ip4_addr2,
+                                                                                 ip.ip4_addr3,
+                                                                                 ip.ip4_addr4,
+                                                                                 (current_tic / MICROSECONDS));
+      publish_msg.msg = publish_info_msg;
+      publish_msg.msg_len = strlen(EYE_APP_PUBLISH_INFO);
+
       ESP_LOGI("FSU_EYE", "Sending Info!\n");
       SC_send_cmd(sc_service_aws, AWS_SERVICE_CMD_MQTT_PUBLISH_MESSAGE, &publish_msg);
       last_time_message = esp_timer_get_time();
@@ -103,10 +130,6 @@ int app_main()
   WIFI_SERVICE_register();
   AWS_SERVICE_register();
   CAM_SERVICE_register();
-
-  memset(&publish_msg, 0, sizeof(message_info_t));
-  publish_msg.msg = EYE_APP_PUBLISH_INFO;
-  publish_msg.msg_len = strlen(EYE_APP_PUBLISH_INFO);
 
   // Create a detached thread of main app
   Iot_CreateDetachedThread(eye_app,

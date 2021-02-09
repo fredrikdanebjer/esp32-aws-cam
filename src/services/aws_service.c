@@ -92,7 +92,7 @@
 
 #define EYE_INFO_MSG                  ("{"\
                                          "\"id\":\"" EYE_MSG_ID_FORMAT "\","\
-                                         "\"msg\":\"" EYE_MSG_INFO_FORMAT "\""\
+                                         "\"msg\":" EYE_MSG_INFO_FORMAT ""\
                                        "}")
 
 // App version struct, used by OTA Agent to decide if new firmware is an upgrade

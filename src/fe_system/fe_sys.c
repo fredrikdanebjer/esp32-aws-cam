@@ -104,6 +104,25 @@ static void FE_SYS_NVS_init()
   ESP_ERROR_CHECK(ret);
 }
 
+int FE_SYS_get_ip(ip_address_t *ip)
+{
+  tcpip_adapter_ip_info_t ip_info;
+
+  if (tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info) == ESP_OK)
+  {
+    ip->ip4_addr1 = ip4_addr1_16(&ip_info.ip);
+    ip->ip4_addr2 = ip4_addr2_16(&ip_info.ip);
+    ip->ip4_addr3 = ip4_addr3_16(&ip_info.ip);
+    ip->ip4_addr4 = ip4_addr4_16(&ip_info.ip);
+
+    return EXIT_SUCCESS;
+  }
+  else
+  {
+    return EXIT_FAILURE;
+  }
+}
+
 int FE_SYS_init()
 {
   FE_SYS_NVS_init();
