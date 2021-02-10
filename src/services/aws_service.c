@@ -59,15 +59,17 @@
 
 #define TOPIC_FILTER_COUNT            1
 
+#define FSU_EYE_RULES_TOPIC           "$aws/rules/"
+
 #define FSU_EYE_TOPIC_ROOT            "fsu/eye/" FSU_EYE_AWS_IOT_THING_NAME
 
 #define FSU_EYE_SUBSCRIBE_COMMAND     (FSU_EYE_TOPIC_ROOT "/r/command")
 /**
  * /r/command messages are expected to have this form:
  * {
- *  "id":"thing_name",      // The device thing name
- *  "service_id":"service", // ID of the service to perform
- *  "command_id":"command"  // Command ID to perform on the service
+ *  "id":<thing_name>,      // The device thing name
+ *  "service_id":<service>, // ID of the service to perform
+ *  "command_id":<command>  // Command ID to perform on the service
  * }
 */
 #define COMMAND_MESSAGE_TOKENS        (7U)
@@ -76,8 +78,8 @@
 #define COMMAND_MESSAGE_COMMAND_FIELD "command_id"
 
 #define FSU_EYE_TOPIC_LWT             (FSU_EYE_TOPIC_ROOT "/lwt")
-#define FSU_EYE_TOPIC_INFO            (FSU_EYE_TOPIC_ROOT "/info")
-#define FSU_EYE_TOPIC_IMAGE           (FSU_EYE_TOPIC_ROOT "/image")
+#define FSU_EYE_TOPIC_INFO            (FSU_EYE_RULES_TOPIC "info_to_s3/" FSU_EYE_TOPIC_ROOT "/info")
+#define FSU_EYE_TOPIC_IMAGE           (FSU_EYE_RULES_TOPIC "image_to_s3/" FSU_EYE_TOPIC_ROOT "/image")
 
 #define LWT_MESSAGE                   ("{"\
                                           "\"id\":\"" FSU_EYE_AWS_IOT_THING_NAME "\"" \
