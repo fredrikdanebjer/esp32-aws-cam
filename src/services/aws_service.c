@@ -59,6 +59,8 @@
 
 #define TOPIC_FILTER_COUNT            1
 
+#define FSU_EYE_RULES_TOPIC           "$aws/rules/"
+
 #define FSU_EYE_TOPIC_ROOT            "fsu/eye/" FSU_EYE_AWS_IOT_THING_NAME
 
 #define FSU_EYE_SUBSCRIBE_COMMAND     (FSU_EYE_TOPIC_ROOT "/r/command")
@@ -76,8 +78,8 @@
 #define COMMAND_MESSAGE_COMMAND_FIELD "command_id"
 
 #define FSU_EYE_TOPIC_LWT             (FSU_EYE_TOPIC_ROOT "/lwt")
-#define FSU_EYE_TOPIC_INFO            (FSU_EYE_TOPIC_ROOT "/info")
-#define FSU_EYE_TOPIC_IMAGE           (FSU_EYE_TOPIC_ROOT "/image")
+#define FSU_EYE_TOPIC_INFO            (FSU_EYE_RULES_TOPIC "info_to_s3/" FSU_EYE_TOPIC_ROOT "/info")
+#define FSU_EYE_TOPIC_IMAGE           (FSU_EYE_RULES_TOPIC "image_to_s3/" FSU_EYE_TOPIC_ROOT "/image")
 
 #define LWT_MESSAGE                   ("{"\
                                           "\"id\":\"" FSU_EYE_AWS_IOT_THING_NAME "\"" \
