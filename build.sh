@@ -23,12 +23,6 @@ if [ $# -eq 0 ]; then
   mkdir build
   cmake -S . -B build -D_VERSION_MAJOR=$VERSION_MAJOR -D_VERSION_MINOR=$VERSION_MINOR -D_VERSION_BUILD=$VERSION_BUILD -DCMAKE_TOOLCHAIN_FILE=external/freertos/tools/cmake/toolchains/xtensa-esp32.cmake -G Ninja
   cmake --build build
-elif [[ $# -eq 2 ]] && [[ $1 = "debug" ]] && [[ "${2}" =~ ^[0-9]+$ ]]; then
-  echo Setting DEBUG_PRINT_LEVEL to $2
-  rm -rf build
-  mkdir build
-  cmake -S . -B build -D_DEBUG_PRINT_LEVEL=$2 -DIDF_SDK_CONFIG_DEFAULTS=config/esp32/sdkconfig.defaults -DCMAKE_TOOLCHAIN_FILE=external/freertos/tools/cmake/toolchains/xtensa-esp32.cmake -G Ninja
-  cmake --build build
 elif [[ $# -eq 2 ]] && [[ $1 = "release" ]] && [[ "${2}" =~ ^[0-9]+$ ]]; then
   rm -rf build
   mkdir build
@@ -49,10 +43,10 @@ elif [[ $# -eq 2 ]] && [[ $1 = "all" ]]; then
   ./external/freertos/vendors/espressif/esp-idf/tools/idf.py monitor -p $2 -B build
 else
   echo "Unknown command! Usage:"
-  echo "./build.sh                - compile"
-  echo "./build.sh debug <level>  - compile with debug logs enabled at provided level"
-  echo "./build.sh flash          - flash"
-  echo "./build.sh monitor <port> - monitor output"
-  echo "./build.sh erase          - erase flash"
-  echo "./build.sh all <port>     - builds with max highest debug resolution, flashes and starts monitoring"
+  echo "./build.sh                 - compile"
+  echo "./build.sh release <build> - compile with provided build version"
+  echo "./build.sh flash           - flash"
+  echo "./build.sh monitor <port>  - monitor output"
+  echo "./build.sh erase           - erase flash"
+  echo "./build.sh all <port>      - builds with max highest debug resolution, flashes and starts monitoring"
 fi

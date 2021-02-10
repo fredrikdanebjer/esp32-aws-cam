@@ -29,6 +29,7 @@
 
 #include "iot_wifi.h"
 
+#if (AFR_ESP_LWIP)
 /** \addtogroup FSU_EYE_MAC_ADDR
  *
  * Default MAC Address
@@ -85,6 +86,7 @@
 #define FSU_EYE_NET_MASK2                     255
 #define FSU_EYE_NET_MASK3                     0
 /** @}*/
+#endif
 
 /*
  * @brief Wi-Fi network to join.

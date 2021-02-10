@@ -28,6 +28,22 @@
 #ifndef FE_SYS__H
 #define FE_SYS__H
 
+#include <stdint.h>
+
+typedef struct ip_address {
+  uint16_t ip4_addr1;
+  uint16_t ip4_addr2;
+  uint16_t ip4_addr3;
+  uint16_t ip4_addr4;
+} ip_address_t;
+
+/*
+* @brief Fetches the IP address from the underlying TCPIP stack.
+* @arg ip is the address where to store the four ip fields
+* @retval EXIT_SUCCESS on success, otherwise EXIT_FAILURE
+*/
+int FE_SYS_get_ip(ip_address_t *ip);
+
 /*
 * @brief Initializes the system resources required to run the application.
 * @retval EXIT_SUCCES on success, otherwise EXIT_FAILURE
