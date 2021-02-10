@@ -67,9 +67,9 @@
 /**
  * /r/command messages are expected to have this form:
  * {
- *  "id":"thing_name",      // The device thing name
- *  "service_id":"service", // ID of the service to perform
- *  "command_id":"command"  // Command ID to perform on the service
+ *  "id":<thing_name>,      // The device thing name
+ *  "service_id":<service>, // ID of the service to perform
+ *  "command_id":<command>  // Command ID to perform on the service
  * }
 */
 #define COMMAND_MESSAGE_TOKENS        (7U)
