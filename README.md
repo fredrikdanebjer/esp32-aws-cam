@@ -131,3 +131,4 @@ https://randomnerdtutorials.com/esp32-cam-video-streaming-face-recognition-ardui
 - Add a command-list to process in System Controller which it polls, callback should not do heavy processing
 - All configurations to be placed in NVS, to be configurable over AWS connection
 - WiFi setup over BLE
+- Add AWS Service parser for additional arg

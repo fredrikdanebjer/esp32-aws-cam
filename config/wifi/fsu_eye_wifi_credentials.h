@@ -29,7 +29,7 @@
 
 #include "iot_wifi.h"
 
-#if (AFR_ESP_LWIP)
+#if (!AFR_ESP_LWIP)
 /** \addtogroup FSU_EYE_MAC_ADDR
  *
  * Default MAC Address
@@ -87,6 +87,11 @@
 #define FSU_EYE_NET_MASK3                     0
 /** @}*/
 #endif
+
+/*
+ * @brief Wi-Fi credentials max length.
+ */
+#define FSU_EYE_WIFI_CREDENTIALS_MAX_LENGTH   (50U)
 
 /*
  * @brief Wi-Fi network to join.

@@ -25,6 +25,7 @@
 */
 
 #include "fe_sys.h"
+#include "fe_nvs.h"
 
 #include <stdint.h>
 
@@ -38,8 +39,6 @@
 #endif
 
 #include "FreeRTOSConfig.h"
-
-#include "nvs_flash.h"
 
 #include "iot_system_init.h"
 #include "iot_logging_task.h"
@@ -91,19 +90,6 @@ static const uint8_t _dns_server_addr[4] =
 };
 #endif
 
-static void FE_SYS_NVS_init()
-{
-  esp_err_t ret = nvs_flash_init();
-
-  if(ESP_ERR_NVS_NO_FREE_PAGES != ret
-   || ESP_ERR_NVS_NEW_VERSION_FOUND != ret)
-  {
-    ESP_ERROR_CHECK(nvs_flash_erase());
-    ret = nvs_flash_init();
-  }
-  ESP_ERROR_CHECK(ret);
-}
-
 int FE_SYS_get_ip(ip_address_t *ip)
 {
   tcpip_adapter_ip_info_t ip_info;
@@ -125,7 +111,9 @@ int FE_SYS_get_ip(ip_address_t *ip)
 
 int FE_SYS_init()
 {
-  FE_SYS_NVS_init();
+  // Underlying libraries requried for AWS (pkcs11) are using NVS, therefor we
+  // have to initialize the NVS early, prior to starting up storage service
+  FE_NVS_init();
 
   // Create logging task
   xLoggingTaskInitialize(FE_SYS_LOGGING_TASK_STACK_SIZE,
