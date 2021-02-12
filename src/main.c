@@ -29,6 +29,7 @@
 #include "xtensa/core-macros.h"
 #include "fe_sys.h"
 #include "system_controller.h"
+#include "kvs_service.h"
 #include "wifi_service.h"
 #include "aws_service.h"
 #include "camera_service.h"
@@ -44,6 +45,7 @@
 #include "esp_timer.h"
 
 #include <esp_http_server.h>
+
 
 // EYE App configs
 #define EYE_APP_TASK_PRIORITY     (tskIDLE_PRIORITY + 5U)
@@ -127,6 +129,7 @@ int app_main()
   SC_init();
 
   // Registers services to System Controllers
+  KVS_SERVICE_register();
   WIFI_SERVICE_register();
   AWS_SERVICE_register();
   CAM_SERVICE_register();

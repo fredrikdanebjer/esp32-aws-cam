@@ -284,8 +284,16 @@ static void _mqtt_subscription_callback(void *param1,
       }
       ++i;
     }
-    ESP_LOGW("AWS_SERVICE", "MQTT subscribe issuing command %d to service %d.", command, service);
-    SC_send_cmd((uint8_t)service, (uint8_t)command, NULL);
+
+    if (service >= sc_service_count)
+    {
+      ESP_LOGW("AWS_SERVICE", "MQTT subscribe received unknown service id %d, discarding", service);
+    }
+    else
+    {
+      ESP_LOGW("AWS_SERVICE", "MQTT subscribe issuing command %d to service %d.", command, service);
+      SC_send_cmd((sc_service_list_t)service, (uint8_t)command, NULL);
+    }
   }
 }
 

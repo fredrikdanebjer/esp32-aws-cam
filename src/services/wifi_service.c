@@ -26,20 +26,107 @@
 
 #include "fe_wifi.h"
 #include "system_controller.h"
+#include "kvs_service.h"
 
-#include "fsu_eye_wifi_credentials.h"
+#include <string.h>
 
 #include "esp_log.h"
 
+#include "fsu_eye_wifi_credentials.h"
+
+static int _is_ssid_password_present()
+{
+  char ssid[FSU_EYE_WIFI_CREDENTIALS_MAX_LENGTH] = {'\0'};
+  char password[FSU_EYE_WIFI_CREDENTIALS_MAX_LENGTH] = {'\0'};
+
+  kvs_entry_t kvs_ssid = {0};
+  kvs_entry_t kvs_password = {0};
+
+  kvs_ssid.key = kvs_entry_wifi_ssid;
+  kvs_ssid.value = ssid;
+  kvs_ssid.value_len = FSU_EYE_WIFI_CREDENTIALS_MAX_LENGTH;
+
+  kvs_password.key = kvs_entry_wifi_password;
+  kvs_password.value = password;
+  kvs_password.value_len = FSU_EYE_WIFI_CREDENTIALS_MAX_LENGTH;
+
+  if (SC_send_cmd(sc_service_kvs, KVS_SERVICE_CMD_VERIFY_KEY, &kvs_ssid) != EXIT_SUCCESS)
+  {
+    ESP_LOGI("WIFI SERVICE:", "Contents of WiFi SSID NVS blob: %s\n", kvs_ssid.value);
+    return 0;
+  }
+
+  if (SC_send_cmd(sc_service_kvs, KVS_SERVICE_CMD_VERIFY_KEY, &kvs_password) != EXIT_SUCCESS)
+  {
+    ESP_LOGI("WIFI SERVICE:", "Contents of WiFi PW NVS blob: %s\n", kvs_password.value);
+    return 0;
+  }
+
+  return 1;
+}
+
+static int _put_default_ssid_password()
+{
+  char ssid[FSU_EYE_WIFI_CREDENTIALS_MAX_LENGTH] = {'\0'};
+  char password[FSU_EYE_WIFI_CREDENTIALS_MAX_LENGTH] = {'\0'};
+
+  kvs_entry_t kvs_ssid = {0};
+  kvs_entry_t kvs_password = {0};
+
+  snprintf(ssid, FSU_EYE_WIFI_CREDENTIALS_MAX_LENGTH, "%s", FSU_EYE_WIFI_SSID);
+  snprintf(password, FSU_EYE_WIFI_CREDENTIALS_MAX_LENGTH, "%s", FSU_EYE_WIFI_PASSWORD);
+
+  kvs_ssid.key = kvs_entry_wifi_ssid;
+  kvs_ssid.value = ssid;
+  kvs_ssid.value_len = strlen(FSU_EYE_WIFI_SSID);
+
+  kvs_password.key = kvs_entry_wifi_password;
+  kvs_password.value = password;
+  kvs_password.value_len = strlen(FSU_EYE_WIFI_PASSWORD);
+
+  if (SC_send_cmd(sc_service_kvs, KVS_SERVICE_CMD_PUT_KEY_VALUE, &kvs_ssid) != EXIT_SUCCESS)
+  {
+    return 0;
+  }
+
+  if (SC_send_cmd(sc_service_kvs, KVS_SERVICE_CMD_PUT_KEY_VALUE, &kvs_password) != EXIT_SUCCESS)
+  {
+    return 0;
+  }
+
+  return 1;
+}
+
 static int WIFI_SERVICE_init()
 {
-  int status = FE_WIFI_init(FSU_EYE_WIFI_SSID,
-                            FSU_EYE_WIFI_PASSWORD,
-                            FSU_EYE_WIFI_SECURITY);
-
-  if (EXIT_SUCCESS != status)
+  if (!_is_ssid_password_present())
   {
-    return status;
+    ESP_LOGI("WIFI SERVICE", "Writing Default SSID/PW to NVS\n");
+    _put_default_ssid_password();
+  }
+
+  char ssid[FSU_EYE_WIFI_CREDENTIALS_MAX_LENGTH] = {'\0'};
+  char password[FSU_EYE_WIFI_CREDENTIALS_MAX_LENGTH] = {'\0'};
+
+  kvs_entry_t kvs_ssid = {0};
+  kvs_entry_t kvs_password = {0};
+
+  kvs_ssid.key = kvs_entry_wifi_ssid;
+  kvs_ssid.value = ssid;
+  kvs_ssid.value_len = FSU_EYE_WIFI_CREDENTIALS_MAX_LENGTH;
+
+  kvs_password.key = kvs_entry_wifi_password;
+  kvs_password.value = password;
+  kvs_password.value_len = FSU_EYE_WIFI_CREDENTIALS_MAX_LENGTH;
+
+  SC_send_cmd(sc_service_kvs, KVS_SERVICE_CMD_GET_KEY_VALUE, &kvs_ssid);
+  SC_send_cmd(sc_service_kvs, KVS_SERVICE_CMD_GET_KEY_VALUE, &kvs_password);
+
+  if (EXIT_SUCCESS != FE_WIFI_init(kvs_ssid.value,
+                                   kvs_password.value,
+                                   FSU_EYE_WIFI_SECURITY))
+  {
+    return EXIT_FAILURE;
   }
 
   return FE_WIFI_connect();

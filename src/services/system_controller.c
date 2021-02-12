@@ -105,20 +105,21 @@ int SC_deregister_service(uint8_t service_id)
     return EXIT_SUCCESS;
   }
 
-  return _services[service_id].deinit_service(NULL);
-}
-
-int SC_send_cmd(uint8_t sid, uint8_t cmd, void* arg)
-{
-  if (sid >= sc_service_count)
+  if (_services[service_id].deinit_service(NULL) != EXIT_SUCCESS)
   {
     return EXIT_FAILURE;
   }
 
-  return _services[sid].recv_msg(cmd, arg);
+  SC_DEACTIVATE_SERVICE(service->service_id);
+  return EXIT_SUCCESS;
 }
 
-void SC_run()
+int SC_send_cmd(sc_service_list_t sid, uint8_t cmd, void* arg)
 {
-  // Handle message routing
+  if (SC_IS_SERVICE_ACTIVE(sid))
+  {
+    return _services[sid].recv_msg(cmd, arg);
+  }
+
+  return EXIT_FAILURE;
 }
