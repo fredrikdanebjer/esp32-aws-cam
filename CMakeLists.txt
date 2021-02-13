@@ -22,6 +22,7 @@ set(INCLUDE_DIRS ${INCLUDE_DIRS}
         "config/aws"
         "config/wifi"
         "config/http_server"
+        "config/kvs"
         "include/3rd_party/aws"
         "include/fe_system"
         "include/services"

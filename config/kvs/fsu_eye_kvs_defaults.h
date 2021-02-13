@@ -1,5 +1,5 @@
 /*
-* @file kvs_service.h
+* @file fsu_eye_kvs_defaults.c
 *
 * The MIT License (MIT)
 *
@@ -24,32 +24,16 @@
 * THE SOFTWARE.
 */
 
-#ifndef KVS_SERVICE__H
-#define KVS_SERVICE__H
+#ifndef FSU_EYE_KVS_DEFAULTS__H
+#define FSU_EYE_KVS_DEFAULTS__H
 
-#include <stdlib.h>
+#include "kvs_service.h"
 
-#define KVS_SERVICE_CMD_GET_KEY_VALUE           (0U)
-#define KVS_SERVICE_CMD_PUT_KEY_VALUE           (1U)
-#define KVS_SERVICE_CMD_VERIFY_KEY              (2U)
+#include "fsu_eye_wifi_credentials.h"
 
-#define KVS_SERVICE_MAXIMUM_VALUE_SIZE          (0x100)
+char _kvs_defaults[kvs_entry_count][KVS_SERVICE_MAXIMUM_VALUE_SIZE] = {
+  FSU_EYE_WIFI_SSID,
+  FSU_EYE_WIFI_PASSWORD
+};
 
-typedef enum {
-  kvs_entry_wifi_ssid,
-  kvs_entry_wifi_password,
-  kvs_entry_count
-} kvs_entry_id_t;
-
-typedef struct key_value_pair {
-  kvs_entry_id_t key;
-  char *value;
-  size_t value_len;
-} kvs_entry_t;
-
-/*
-* @brief Registers the key-value-storage service to the system controller.
-*/
-void KVS_SERVICE_register();
-
-#endif /* ifndef KVS_SERVICE__H */
+#endif /* FSU_EYE_KVS_DEFAULTS__H */
