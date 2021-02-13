@@ -37,7 +37,7 @@ static uint8_t _initialized = 0;
 
 #define SC_IS_SERVICE_ACTIVE(id) ((1 << (id)) & _service_present_mask)
 #define SC_ACTIVATE_SERVICE(id) (_service_present_mask |= (1 << (id)))
-#define SC_DEACTIVATE__SERVICE(id) (_service_present_mask &= (0xFF - (1 << (id))))
+#define SC_DEACTIVATE_SERVICE(id) (_service_present_mask &= (0xFF - (1 << (id))))
 
 int SC_init()
 {
@@ -110,7 +110,7 @@ int SC_deregister_service(uint8_t service_id)
     return EXIT_FAILURE;
   }
 
-  SC_DEACTIVATE_SERVICE(service->service_id);
+  SC_DEACTIVATE_SERVICE(service_id);
   return EXIT_SUCCESS;
 }
 
