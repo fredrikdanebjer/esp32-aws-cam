@@ -49,16 +49,18 @@
 
 // EYE App configs
 #define EYE_APP_TASK_PRIORITY     (tskIDLE_PRIORITY + 5U)
-#define EYE_APP_STACKSIZE         (0x1200U)
+#define EYE_APP_STACKSIZE         (0x1800U)
 
 #define EYE_OTA_TASK_PRIORITY     (tskIDLE_PRIORITY + 4U)
-#define EYE_OTA_STACKSIZE         (0x1800U)
+#define EYE_OTA_STACKSIZE         (0x1200U)
 
 #define MICROSECONDS              (1000000U)
 
 #define EYE_APP_PUBLISH_INFO      ("{" \
                                       "\"fsu-eye version\":\"%u.%u.%u\"," \
                                       "\"webserver local ip\":\"%d.%d.%d.%d\"," \
+                                      "\"info report freq\":\"%llu\"" \
+                                      "\"image report freq\":\"%llu\"" \
                                       "\"uptime\":\"%llu\"" \
                                   "}")
 
@@ -71,16 +73,38 @@ static void eye_app(void * pArgument)
   uint64_t current_tic = 0;
   uint64_t last_time_camera = 0;
   uint64_t last_time_message = 0;
+  uint64_t image_freq = UINT64_MAX;
+  uint64_t info_freq = UINT64_MAX;
 
   ip_address_t ip = {0};
   char publish_info_msg[EYE_APP_PUBLISH_INFO_LEN] = {'\0'};
 
+  char entry_data[KVS_SERVICE_MAXIMUM_VALUE_SIZE];
+  kvs_entry_t freq_entry = {
+    .key = kvs_entry_count,
+    .value = entry_data,
+    .value_len = KVS_SERVICE_MAXIMUM_VALUE_SIZE
+  };
+
   while (1)
   {
     SC_send_cmd(sc_service_aws, AWS_SERVICE_CMD_MQTT_CONNECT_SUBSCRIBE, NULL);
+
     current_tic = esp_timer_get_time();
 
-    if (current_tic - last_time_message > MICROSECONDS * 60 * 15)
+    memset(entry_data, '\0', KVS_SERVICE_MAXIMUM_VALUE_SIZE);
+    freq_entry.key = kvs_entry_eye_info_report_interval;
+    SC_send_cmd(sc_service_kvs, KVS_SERVICE_CMD_GET_KEY_VALUE, &freq_entry);
+
+    // We have already verified the value before allowing it to be put into KVS,
+    // so just check base case
+    if ((info_freq = strtoull(freq_entry.value, NULL, 10)) <= 0)
+    {
+      ESP_LOGI("FSU_EYE", "Error on fetching Info Report Frequency from KVS\n");
+      info_freq = UINT64_MAX;
+    }
+
+    if (current_tic - last_time_message > MICROSECONDS * info_freq)
     {
       memset(&publish_msg, 0, sizeof(message_info_t));
 
@@ -96,6 +120,8 @@ static void eye_app(void * pArgument)
                                                                                  ip.ip4_addr2,
                                                                                  ip.ip4_addr3,
                                                                                  ip.ip4_addr4,
+                                                                                 image_freq,
+                                                                                 info_freq,
                                                                                  (current_tic / MICROSECONDS));
       publish_msg.msg = publish_info_msg;
       publish_msg.msg_len = strlen(EYE_APP_PUBLISH_INFO);
@@ -105,7 +131,19 @@ static void eye_app(void * pArgument)
       last_time_message = esp_timer_get_time();
     }
 
-    if (current_tic - last_time_camera > MICROSECONDS * 30)
+    memset(entry_data, '\0', KVS_SERVICE_MAXIMUM_VALUE_SIZE);
+    freq_entry.key = kvs_entry_eye_image_report_interval;
+    SC_send_cmd(sc_service_kvs, KVS_SERVICE_CMD_GET_KEY_VALUE, &freq_entry);
+
+    // We have already verified the value before allowing it to be put into KVS,
+    // so just check base case
+    if ((image_freq = strtoull(freq_entry.value, NULL, 10)) <= 0)
+    {
+      ESP_LOGI("FSU_EYE", "Error on fetching Image Report Frequency from KVS\n");
+      image_freq = UINT64_MAX;
+    }
+
+    if (current_tic - last_time_camera > MICROSECONDS * image_freq)
     {
       ESP_LOGI("FSU_EYE", "Taking Picture!\n");
       SC_send_cmd(sc_service_camera, CAM_SERVICE_CMD_CAPTURE_SEND_IMAGE, NULL);

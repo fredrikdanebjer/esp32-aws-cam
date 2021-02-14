@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #include "FreeRTOS.h"
 #include "semphr.h"
@@ -42,14 +43,75 @@
 
 #define KVS_MAX_CHARS_IN_ENTRIES  (1U)
 
+/*
+* @brief Dictionary of what types the KVS entries has to be validated as,
+* internally they are still stored as strings.
+*/
+static char kvs_entry_type_dict[kvs_entry_count] = {
+  's',    // WiFi SSID: String
+  's',    // WiFi Password: String
+  'u',    // Image Report Interval: Unsigned 64-bit int
+  'u'     // Info Report Interval: Unsigned 64-bit int
+};
+
 static uint8_t _initialized = 0;
 static SemaphoreHandle_t _flash_mutex;
 
 static char _ram_kv_store[kvs_entry_count][KVS_SERVICE_MAXIMUM_VALUE_SIZE];
 
+int _validate_string_as_uint64(const char *str)
+{
+  const char *itr = str;
+  char *end;
+
+  // strtoull accepts prepended spaces and +/- signs, we do not accept this in KVS, so reject
+  if (*itr == ' ' || *itr == '+' || *itr == '-')
+  {
+    return 0;
+  }
+
+  errno = 0;
+
+  strtoull(itr, &end, 10);
+
+  if (end == itr
+    || '\0' != *end
+    || ERANGE == errno)
+  {
+    ESP_LOGI("KVS SERVICE", "String is not an uint\n");
+    return 0;
+  }
+  return 1;
+}
+
+static int KVS_SERVICE_validate_type(kvs_entry_t *entry)
+{
+  if (kvs_entry_type_dict[entry->key] == 's')
+  {
+    return 1;
+  }
+  else if (kvs_entry_type_dict[entry->key] == 'u')
+  {
+    if (!_validate_string_as_uint64(entry->value))
+    {
+      return 0;
+    }
+    return 1;
+  }
+  ESP_LOGI("KVS SERVICE", "Provided entry has unknown type\n");
+
+  return 0;
+}
+
 static int KVS_SERVICE_put_value(kvs_entry_t *entry)
 {
   char id_str[KVS_MAX_CHARS_IN_ENTRIES + 1];
+
+
+  if (!KVS_SERVICE_validate_type(entry))
+  {
+    return EXIT_FAILURE;
+  }
 
   if(xSemaphoreTake(_flash_mutex, (TickType_t) 10U) == pdTRUE)
   {

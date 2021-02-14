@@ -1,5 +1,5 @@
 /*
-* @file fsu_eye_kvs_defaults.c
+* @file fsu_eye_app_config.c
 *
 * The MIT License (MIT)
 *
@@ -24,19 +24,17 @@
 * THE SOFTWARE.
 */
 
-#ifndef FSU_EYE_KVS_DEFAULTS__H
-#define FSU_EYE_KVS_DEFAULTS__H
+#ifndef FSU_EYE_APP_CONFIG__H
+#define FSU_EYE_APP_CONFIG__H
 
-#include "kvs_service.h"
+/*
+ * @brief Frequency at which to upload image data to AWS
+ */
+#define FSU_EYE_IMAGE_REPORT_FREQ_SECONDS            "2"
 
-#include "fsu_eye_wifi_credentials.h"
-#include "fsu_eye_app_config.h"
+/*
+ * @brief Frequency at which to upload diagnostic information to AWS
+ */
+#define FSU_EYE_INFO_REPORT_FREQ_SECONDS             "900" // Every 15 minutes
 
-char _kvs_defaults[kvs_entry_count][KVS_SERVICE_MAXIMUM_VALUE_SIZE] = {
-  FSU_EYE_WIFI_SSID,
-  FSU_EYE_WIFI_PASSWORD,
-  FSU_EYE_IMAGE_REPORT_FREQ_SECONDS,
-  FSU_EYE_INFO_REPORT_FREQ_SECONDS
-};
-
-#endif /* FSU_EYE_KVS_DEFAULTS__H */
+#endif /* FSU_EYE_APP_CONFIG__H */

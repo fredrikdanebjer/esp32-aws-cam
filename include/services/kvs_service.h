@@ -38,6 +38,8 @@
 typedef enum {
   kvs_entry_wifi_ssid,
   kvs_entry_wifi_password,
+  kvs_entry_eye_image_report_interval,
+  kvs_entry_eye_info_report_interval,
   kvs_entry_count
 } kvs_entry_id_t;
 
