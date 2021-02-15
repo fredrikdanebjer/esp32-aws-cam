@@ -1,9 +1,9 @@
 /*
-* @file system_controller.h
+* @file fsu_eye_kvs_defaults.c
 *
 * The MIT License (MIT)
 *
-* Copyright (c) 2020 Fredrik Danebjer
+* Copyright (c) 2021 Fredrik Danebjer
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -24,37 +24,19 @@
 * THE SOFTWARE.
 */
 
-#ifndef SYSTEM_CONTROLLER__H
-#define SYSTEM_CONTROLLER__H
+#ifndef FSU_EYE_KVS_DEFAULTS__H
+#define FSU_EYE_KVS_DEFAULTS__H
 
-#include <stdint.h>
+#include "kvs_service.h"
 
-typedef struct service_interface {
-  int (*init_service)();
-  int (*deinit_service)();
-  int (*recv_msg)(uint8_t, void*);
-  uint8_t service_id;
-} sc_service_t;
+#include "fsu_eye_wifi_credentials.h"
+#include "fsu_eye_app_config.h"
 
-typedef enum {
-  sc_service_wifi = 1,
-  sc_service_aws,
-  sc_service_camera,
-  sc_service_kvs,
-  sc_service_count
-} sc_service_list_t;
+char _kvs_defaults[kvs_entry_count][KVS_SERVICE_MAXIMUM_VALUE_SIZE] = {
+  FSU_EYE_WIFI_SSID,
+  FSU_EYE_WIFI_PASSWORD,
+  FSU_EYE_IMAGE_REPORT_FREQ_SECONDS,
+  FSU_EYE_INFO_REPORT_FREQ_SECONDS
+};
 
-int SC_init();
-int SC_deinit();
-int SC_register_service(sc_service_t *service);
-int SC_deregister_service(uint8_t service_id);
-
-/*
-* @brief Sends a command to registered service
-* @param sid The service identifier
-* @param cmd An applicable command defined in the service
-* @param arg Any other arguments required for the command
-*/
-int SC_send_cmd(sc_service_list_t sid, uint8_t cmd, void* arg);
-
-#endif /* ifndef SYSTEM_CONTROLLER__H */
+#endif /* FSU_EYE_KVS_DEFAULTS__H */

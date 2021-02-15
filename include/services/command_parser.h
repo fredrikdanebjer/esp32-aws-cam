@@ -1,9 +1,9 @@
 /*
-* @file system_controller.h
+* @file command_parser.h
 *
 * The MIT License (MIT)
 *
-* Copyright (c) 2020 Fredrik Danebjer
+* Copyright (c) 2021 Fredrik Danebjer
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -24,37 +24,31 @@
 * THE SOFTWARE.
 */
 
-#ifndef SYSTEM_CONTROLLER__H
-#define SYSTEM_CONTROLLER__H
+#ifndef COMMAND_PARSER__H
+#define COMMAND_PARSER__H
+
+#include "system_controller.h"
+#include "kvs_service.h"
+#include "aws_service.h"
 
 #include <stdint.h>
 
-typedef struct service_interface {
-  int (*init_service)();
-  int (*deinit_service)();
-  int (*recv_msg)(uint8_t, void*);
-  uint8_t service_id;
-} sc_service_t;
-
-typedef enum {
-  sc_service_wifi = 1,
-  sc_service_aws,
-  sc_service_camera,
-  sc_service_kvs,
-  sc_service_count
-} sc_service_list_t;
-
-int SC_init();
-int SC_deinit();
-int SC_register_service(sc_service_t *service);
-int SC_deregister_service(uint8_t service_id);
+typedef struct fsu_service_argument {
+  sc_service_list_t sid;
+  uint8_t cmd;
+  union {
+    message_info_t info_msg;
+    kvs_entry_t kvs;
+  } as;
+} cp_fsu_service_argument_t;
 
 /*
-* @brief Sends a command to registered service
-* @param sid The service identifier
-* @param cmd An applicable command defined in the service
-* @param arg Any other arguments required for the command
+* @brief Parses an upstream JSON formatted message intended for the FSU-Eye and
+* fills the argument struct accordingly.
+* @param arg instant of cp_fsu_service_argument_t which to fill with parsed data
+* @param json the string to parse
+* @param json_len the length of the string to parse
 */
-int SC_send_cmd(sc_service_list_t sid, uint8_t cmd, void* arg);
+int CP_parse_upstream_json(cp_fsu_service_argument_t *arg, const char *json, size_t json_len);
 
-#endif /* ifndef SYSTEM_CONTROLLER__H */
+#endif /* ifndef COMMAND_PARSER__H */

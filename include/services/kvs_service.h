@@ -1,9 +1,9 @@
 /*
-* @file system_controller.h
+* @file kvs_service.h
 *
 * The MIT License (MIT)
 *
-* Copyright (c) 2020 Fredrik Danebjer
+* Copyright (c) 2021 Fredrik Danebjer
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -24,37 +24,39 @@
 * THE SOFTWARE.
 */
 
-#ifndef SYSTEM_CONTROLLER__H
-#define SYSTEM_CONTROLLER__H
+#ifndef KVS_SERVICE__H
+#define KVS_SERVICE__H
 
-#include <stdint.h>
+#include <stdlib.h>
 
-typedef struct service_interface {
-  int (*init_service)();
-  int (*deinit_service)();
-  int (*recv_msg)(uint8_t, void*);
-  uint8_t service_id;
-} sc_service_t;
+#define KVS_SERVICE_CMD_GET_KEY_VALUE           (0U)
+#define KVS_SERVICE_CMD_PUT_KEY_VALUE           (1U)
 
-typedef enum {
-  sc_service_wifi = 1,
-  sc_service_aws,
-  sc_service_camera,
-  sc_service_kvs,
-  sc_service_count
-} sc_service_list_t;
-
-int SC_init();
-int SC_deinit();
-int SC_register_service(sc_service_t *service);
-int SC_deregister_service(uint8_t service_id);
+#define KVS_SERVICE_MAXIMUM_VALUE_SIZE          (0x100)
 
 /*
-* @brief Sends a command to registered service
-* @param sid The service identifier
-* @param cmd An applicable command defined in the service
-* @param arg Any other arguments required for the command
+* @brief Valid KVS keys
 */
-int SC_send_cmd(sc_service_list_t sid, uint8_t cmd, void* arg);
+typedef enum {
+  kvs_entry_wifi_ssid,
+  kvs_entry_wifi_password,
+  kvs_entry_eye_image_report_interval,
+  kvs_entry_eye_info_report_interval,
+  kvs_entry_count
+} kvs_entry_id_t;
 
-#endif /* ifndef SYSTEM_CONTROLLER__H */
+/*
+* @brief KVS Service Argument Struct
+*/
+typedef struct key_value_pair {
+  kvs_entry_id_t key;
+  char value[KVS_SERVICE_MAXIMUM_VALUE_SIZE];
+  size_t value_len;
+} kvs_entry_t;
+
+/*
+* @brief Registers the key-value-storage service to the system controller.
+*/
+void KVS_SERVICE_register();
+
+#endif /* ifndef KVS_SERVICE__H */
