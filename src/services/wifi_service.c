@@ -36,18 +36,13 @@
 
 static int WIFI_SERVICE_init()
 {
-  char ssid[KVS_SERVICE_MAXIMUM_VALUE_SIZE] = {'\0'};
-  char password[KVS_SERVICE_MAXIMUM_VALUE_SIZE] = {'\0'};
-
   kvs_entry_t kvs_ssid = {0};
   kvs_entry_t kvs_password = {0};
 
   kvs_ssid.key = kvs_entry_wifi_ssid;
-  kvs_ssid.value = ssid;
   kvs_ssid.value_len = KVS_SERVICE_MAXIMUM_VALUE_SIZE;
 
   kvs_password.key = kvs_entry_wifi_password;
-  kvs_password.value = password;
   kvs_password.value_len = KVS_SERVICE_MAXIMUM_VALUE_SIZE;
 
   SC_send_cmd(sc_service_kvs, KVS_SERVICE_CMD_GET_KEY_VALUE, &kvs_ssid);

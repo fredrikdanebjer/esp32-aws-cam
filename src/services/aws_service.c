@@ -25,6 +25,7 @@
 */
 
 #include "aws_service.h"
+#include "command_parser.h"
 
 #include <string.h>
 #include "types/iot_mqtt_types.h"
@@ -64,18 +65,6 @@
 #define FSU_EYE_TOPIC_ROOT            "fsu/eye/" FSU_EYE_AWS_IOT_THING_NAME
 
 #define FSU_EYE_SUBSCRIBE_COMMAND     (FSU_EYE_TOPIC_ROOT "/r/command")
-/**
- * /r/command messages are expected to have this form:
- * {
- *  "id":<thing_name>,      // The device thing name
- *  "service_id":<service>, // ID of the service to perform
- *  "command_id":<command>  // Command ID to perform on the service
- * }
-*/
-#define COMMAND_MESSAGE_TOKENS        (7U)
-#define COMMAND_MESSAGE_ID_FIELD      "id"
-#define COMMAND_MESSAGE_SERVICE_FIELD "service_id"
-#define COMMAND_MESSAGE_COMMAND_FIELD "command_id"
 
 #define FSU_EYE_TOPIC_LWT             (FSU_EYE_TOPIC_ROOT "/lwt")
 #define FSU_EYE_TOPIC_INFO            (FSU_EYE_RULES_TOPIC "info_to_s3/" FSU_EYE_TOPIC_ROOT "/info")
@@ -87,7 +76,6 @@
                                        "}")
 
 #define EYE_PUBLISH_MAX_LEN           (0x4C00U)
-#define EYE_SUBSCRIBE_MAX_TOKENS      (0x10U)
 
 #define EYE_MSG_ID_FORMAT             "%s"
 #define EYE_MSG_INFO_FORMAT           "%s"
@@ -111,6 +99,8 @@ static uint8_t _connected = 0;
 static char _payload[EYE_PUBLISH_MAX_LEN];
 static SemaphoreHandle_t _payload_mutex;
 static uint8_t _publish_complete;
+static cp_fsu_service_argument_t rx_cmd;
+
 
 IotNetworkServerInfo_t aws_server_info = {
   .pHostName = FSU_EYE_AWS_MQTT_BROKER_ENDPOINT,
@@ -143,18 +133,6 @@ static IotNetworkCredentials_t network_credentials = {
   .pPrivateKey = FSU_EYE_AWS_PRIVATE_KEY,
   .privateKeySize = sizeof(FSU_EYE_AWS_PRIVATE_KEY)
 };
-
-// JSON Helper function, to check if a token is a sought after string
-static int _jsoneq(const char *json, jsmntok_t *tok, const char *s)
-{
-  if (JSMN_STRING == tok->type
-    && (int)strlen(s) == (tok->end - tok->start)
-    && strncmp(json + tok->start, s, tok->end - tok->start) == 0)
-  {
-    return true;
-  }
-  return false;
-}
 
 // Adds the Certificate and Private Key to the internal PKCS11 and mbedtls
 // utilized lists. The credentials seems to be stored in NVS.
@@ -194,6 +172,8 @@ static int AWS_SERVICE_init()
   }
 
   _mqtt_connection = IOT_MQTT_CONNECTION_INITIALIZER;
+  memset(&rx_cmd, 0, sizeof(cp_fsu_service_argument_t));
+
   _connected = 0;
   _initialized = 1;
   memset(_payload, '\0', EYE_PUBLISH_MAX_LEN);
@@ -228,72 +208,25 @@ static void _mqtt_subscription_callback(void *param1,
   ESP_LOGI("AWS_SERVICE", "MQTT subscribe received: %.*s\n", param->u.message.info.payloadLength,
                                                              (const char*) param->u.message.info.pPayload);
 
-  jsmn_parser parser;
-  jsmntok_t tokens[EYE_SUBSCRIBE_MAX_TOKENS];
-  int status = 0;
-  uint32_t service = 0;
-  uint32_t command = 0;
-  const char *payload = param->u.message.info.pPayload;
-
-
-  jsmn_init(&parser);
-  if ((status = jsmn_parse(&parser, payload, param->u.message.info.payloadLength, tokens, EYE_SUBSCRIBE_MAX_TOKENS)) < 0)
-  {
-    ESP_LOGW("AWS_SERVICE", "MQTT subscribe returned failed during parse with %d.", status);
-  }
-
   if (strncmp(FSU_EYE_SUBSCRIBE_COMMAND, param->u.message.info.pTopicName, param->u.message.info.topicNameLength) == 0)
   {
-    if (COMMAND_MESSAGE_TOKENS != status)
+    memset(&rx_cmd, 0, sizeof(cp_fsu_service_argument_t));
+    if (CP_parse_upstream_json(&rx_cmd, param->u.message.info.pPayload, param->u.message.info.payloadLength) != EXIT_SUCCESS)
     {
-      ESP_LOGW("AWS_SERVICE", "MQTT subscribe invalid command message, found %d tokens.", status);
-      return;
-    }
-    for (int i = 1; i < COMMAND_MESSAGE_TOKENS; ++i)
-    {
-      if (_jsoneq(payload, &tokens[i], COMMAND_MESSAGE_ID_FIELD))
-      {
-        if (!_jsoneq(payload, &tokens[i + 1], FSU_EYE_AWS_IOT_THING_NAME))
-        {
-          ESP_LOGW("AWS_SERVICE", "MQTT subscribe invalid ID received on commange message!");
-          return;
-        }
-      }
-      else if (_jsoneq(payload, &tokens[i], COMMAND_MESSAGE_SERVICE_FIELD))
-      {
-        service = strtoul(&payload[tokens[i + 1].start], NULL, 10);
-        if (0 == service)
-        {
-          ESP_LOGW("AWS_SERVICE", "MQTT subscribe invalid service received on commange message.");
-          return;
-        }
-      }
-      else if (_jsoneq(payload, &tokens[i], COMMAND_MESSAGE_COMMAND_FIELD))
-      {
-        command = strtoul(&payload[tokens[i + 1].start], NULL, 10);
-        if (0 == command)
-        {
-          ESP_LOGW("AWS_SERVICE", "MQTT subscribe invalid command received on commange message.");
-          return;
-        }
-      }
-      else
-      {
-        ESP_LOGW("AWS_SERVICE", "MQTT subscribe invalid command message token at index %d.", i);
-        return;
-      }
-      ++i;
+      ESP_LOGI("AWS_SERVICE", "Failed to parse upsteam command\n");
     }
 
-    if (service >= sc_service_count)
+    switch (rx_cmd.sid)
     {
-      ESP_LOGW("AWS_SERVICE", "MQTT subscribe received unknown service id %d, discarding", service);
+      case sc_service_kvs:
+        SC_send_cmd(rx_cmd.sid, rx_cmd.cmd, &rx_cmd.as.kvs);
+        break;
+
+      default:
+        ESP_LOGI("AWS_SERVICE", "Service ID not supported for remote access\n");
     }
-    else
-    {
-      ESP_LOGW("AWS_SERVICE", "MQTT subscribe issuing command %d to service %d.", command, service);
-      SC_send_cmd((sc_service_list_t)service, (uint8_t)command, NULL);
-    }
+
+    ESP_LOGI("AWS_SERVICE", "Upstream command processed and done\n");
   }
 }
 

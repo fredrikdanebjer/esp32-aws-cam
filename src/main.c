@@ -79,10 +79,8 @@ static void eye_app(void * pArgument)
   ip_address_t ip = {0};
   char publish_info_msg[EYE_APP_PUBLISH_INFO_LEN] = {'\0'};
 
-  char entry_data[KVS_SERVICE_MAXIMUM_VALUE_SIZE];
   kvs_entry_t freq_entry = {
     .key = kvs_entry_count,
-    .value = entry_data,
     .value_len = KVS_SERVICE_MAXIMUM_VALUE_SIZE
   };
 
@@ -92,7 +90,7 @@ static void eye_app(void * pArgument)
 
     current_tic = esp_timer_get_time();
 
-    memset(entry_data, '\0', KVS_SERVICE_MAXIMUM_VALUE_SIZE);
+    memset(freq_entry.value, '\0', KVS_SERVICE_MAXIMUM_VALUE_SIZE);
     freq_entry.key = kvs_entry_eye_info_report_interval;
     SC_send_cmd(sc_service_kvs, KVS_SERVICE_CMD_GET_KEY_VALUE, &freq_entry);
 
@@ -131,7 +129,7 @@ static void eye_app(void * pArgument)
       last_time_message = esp_timer_get_time();
     }
 
-    memset(entry_data, '\0', KVS_SERVICE_MAXIMUM_VALUE_SIZE);
+    memset(freq_entry.value, '\0', KVS_SERVICE_MAXIMUM_VALUE_SIZE);
     freq_entry.key = kvs_entry_eye_image_report_interval;
     SC_send_cmd(sc_service_kvs, KVS_SERVICE_CMD_GET_KEY_VALUE, &freq_entry);
 

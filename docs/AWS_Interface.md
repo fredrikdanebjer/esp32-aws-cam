@@ -15,8 +15,12 @@ A command message has the following syntax:
   "id":<thing_name>,
   "service_id":<service>,
   "command_id":<command>
+  [...]
 }
 ```
+where the extra option indicates arguments required for the service the message is directed to.
+
+NOTE: As jsmn is used as a JSON parser we do not use nested json messages.
 
 ## Services
 
@@ -27,6 +31,7 @@ Service name | Service ID
 WiFi | 1
 AWS | 2
 Camera | 3
+KVS | 4
 
 ### WiFi
 
@@ -49,6 +54,35 @@ The Camera service defines the following commands
 Camera Command | Command ID | Description | Note
 ------ | ------ | ------ | ------
 Capute and Send Image | 0 | Request the Camera to capture an image and send it to the image topic |
+
+### KVS
+
+The KVS Command defines the following commands
+
+KVS Command | Command ID | Description | Note
+------ | ------ | ------ | ------
+Get KVS Key Value | 0 | Request a KVS Value based on a Key | N/A over IoT Console
+Set KVS Key Value | 1 | Set a KVS Value for provided Key | Needs additional arguments for command JSON
+
+A list of KVS Entries can be seen here:
+
+Key ID | Description | Note
+------ | ------- | ------
+WiFi SSID | Name of the WiFi which to conncet to | Need a reset to take effect
+WiFi Password | Password of the WiFi which to conncet to | Need a reset to take effect
+Image Report Interval | Integer dictating the interval in seconds at which to take and send a picture |
+Info Report Interval | Integer dictating the interval in seconds at which to upload diagnostics |
+
+The JSON message when sending a KVS command looks like this
+```json
+{
+  "id":<thing_name>,
+  "service_id":"4",
+  "command_id":<command>
+  "kvs key":<key>
+  "kvs value":<value>
+}
+```
 
 ## MQTT Uploads
 

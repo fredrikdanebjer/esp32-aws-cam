@@ -78,7 +78,7 @@ int _validate_string_as_uint64(const char *str)
     || '\0' != *end
     || ERANGE == errno)
   {
-    ESP_LOGI("KVS SERVICE", "String is not an uint\n");
+    ESP_LOGI("KVS SERVICE", "Provided string <%s> is not an uint\n", str);
     return 0;
   }
   return 1;
@@ -142,12 +142,6 @@ static int KVS_SERVICE_get_value_from_nvs(kvs_entry_t *entry)
   // Transform key to string, as required by nvs
   snprintf(id_str, (sizeof(id_str) / sizeof(char)), "%u", entry->key);
 
-  // Read
-  if (FE_NVS_read_key_value(KVS_NAMESPACE, id_str, NULL, entry->value_len) != EXIT_SUCCESS)
-  {
-    return EXIT_FAILURE;
-  }
-
   return FE_NVS_read_key_value(KVS_NAMESPACE, id_str, entry->value, entry->value_len);
 }
 
@@ -197,22 +191,22 @@ static void KVS_SERVICE_init_store()
 
   for (uint8_t i = 0; i < kvs_entry_count; ++i)
   {
-    memset(_ram_kv_store[i], '\0', KVS_SERVICE_MAXIMUM_VALUE_SIZE);
     entry.key = (kvs_entry_id_t)i;
+    memset(entry.value, '\0', KVS_SERVICE_MAXIMUM_VALUE_SIZE);
+
+    // If a value is present in NVS, load it, otherwise use defaults
     if (KVS_SERVICE_verify_key(&entry) != EXIT_FAILURE)
     {
-      entry.value = _ram_kv_store[i];
-      entry.value_len = KVS_SERVICE_MAXIMUM_VALUE_SIZE;
-
       if (KVS_SERVICE_get_value_from_nvs(&entry) != EXIT_SUCCESS)
       {
-        ESP_LOGI("KVS SERVICE", "Failure to initialize RAM KVS at element %u\n", i);
+        ESP_LOGI("KVS SERVICE", "Failure to load from NVS at element %u\n", i);
       }
+      memcpy(_ram_kv_store[i], entry.value, strlen(entry.value));
     }
     else
     {
-      entry.value = _kvs_defaults[i];
-      entry.value_len = KVS_SERVICE_MAXIMUM_VALUE_SIZE;
+      memcpy(entry.value, _kvs_defaults[i], strlen(_kvs_defaults[i]));
+      entry.value_len = strlen(_kvs_defaults[i]);
 
       if (KVS_SERVICE_put_value(&entry) != EXIT_SUCCESS)
       {
@@ -220,6 +214,13 @@ static void KVS_SERVICE_init_store()
       }
     }
   }
+#if defined(DEBUG_KVS)
+  ESP_LOGI("KVS SERVICE", "KVS RAM Store:\n");
+  for (uint8_t i = 0; i < kvs_entry_count; ++i)
+  {
+    ESP_LOGI("KVS SERVICE", "[%u]:%s\n", i, _ram_kv_store[i]);
+  }
+#endif
 }
 
 static void KVS_SERVICE_deinit_store()
@@ -274,9 +275,6 @@ static int KVS_SERVICE_recv_msg(uint8_t cmd, void* arg)
 
     case (KVS_SERVICE_CMD_GET_KEY_VALUE):
       return KVS_SERVICE_get_value((kvs_entry_t*)arg);
-
-    case (KVS_SERVICE_CMD_VERIFY_KEY):
-      return KVS_SERVICE_verify_key((kvs_entry_t*)arg);
   }
 
   return EXIT_FAILURE;

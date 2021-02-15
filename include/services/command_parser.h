@@ -1,5 +1,5 @@
 /*
-* @file kvs_service.h
+* @file command_parser.h
 *
 * The MIT License (MIT)
 *
@@ -24,39 +24,31 @@
 * THE SOFTWARE.
 */
 
-#ifndef KVS_SERVICE__H
-#define KVS_SERVICE__H
+#ifndef COMMAND_PARSER__H
+#define COMMAND_PARSER__H
 
-#include <stdlib.h>
+#include "system_controller.h"
+#include "kvs_service.h"
+#include "aws_service.h"
 
-#define KVS_SERVICE_CMD_GET_KEY_VALUE           (0U)
-#define KVS_SERVICE_CMD_PUT_KEY_VALUE           (1U)
+#include <stdint.h>
 
-#define KVS_SERVICE_MAXIMUM_VALUE_SIZE          (0x100)
-
-/*
-* @brief Valid KVS keys
-*/
-typedef enum {
-  kvs_entry_wifi_ssid,
-  kvs_entry_wifi_password,
-  kvs_entry_eye_image_report_interval,
-  kvs_entry_eye_info_report_interval,
-  kvs_entry_count
-} kvs_entry_id_t;
+typedef struct fsu_service_argument {
+  sc_service_list_t sid;
+  uint8_t cmd;
+  union {
+    message_info_t info_msg;
+    kvs_entry_t kvs;
+  } as;
+} cp_fsu_service_argument_t;
 
 /*
-* @brief KVS Service Argument Struct
+* @brief Parses an upstream JSON formatted message intended for the FSU-Eye and
+* fills the argument struct accordingly.
+* @param arg instant of cp_fsu_service_argument_t which to fill with parsed data
+* @param json the string to parse
+* @param json_len the length of the string to parse
 */
-typedef struct key_value_pair {
-  kvs_entry_id_t key;
-  char value[KVS_SERVICE_MAXIMUM_VALUE_SIZE];
-  size_t value_len;
-} kvs_entry_t;
+int CP_parse_upstream_json(cp_fsu_service_argument_t *arg, const char *json, size_t json_len);
 
-/*
-* @brief Registers the key-value-storage service to the system controller.
-*/
-void KVS_SERVICE_register();
-
-#endif /* ifndef KVS_SERVICE__H */
+#endif /* ifndef COMMAND_PARSER__H */
