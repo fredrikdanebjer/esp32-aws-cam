@@ -33,8 +33,6 @@ include_directories(${INCLUDE_DIRS})
 
 set(IDF_PROJECT_EXECUTABLE ${PROJECT_NAME})
 
-set(IDF_SDKCONFIG_DEFAULTS "${CMAKE_CURRENT_LIST_DIR}/config/esp32/sdkconfig.defaults")
-
 set(AFR_BOARD espressif.esp32_devkitc CACHE INTERNAL "")
 
 get_filename_component(

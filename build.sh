@@ -21,12 +21,19 @@ which cmake && cmake --version
 if [ $# -eq 0 ]; then
   rm -rf build
   mkdir build
-  cmake -S . -B build -D_VERSION_MAJOR=$VERSION_MAJOR -D_VERSION_MINOR=$VERSION_MINOR -D_VERSION_BUILD=$VERSION_BUILD -DCMAKE_TOOLCHAIN_FILE=external/freertos/tools/cmake/toolchains/xtensa-esp32.cmake -G Ninja
+  cmake -S . -B build -D_VERSION_MAJOR=$VERSION_MAJOR -D_VERSION_MINOR=$VERSION_MINOR -D_VERSION_BUILD=$VERSION_BUILD -DIDF_SDKCONFIG_DEFAULTS=config/esp32/sdkconfig.dev -DCMAKE_TOOLCHAIN_FILE=external/freertos/tools/cmake/toolchains/xtensa-esp32.cmake -G Ninja
   cmake --build build
-elif [[ $# -eq 2 ]] && [[ $1 = "release" ]] && [[ "${2}" =~ ^[0-9]+$ ]]; then
+elif [[ $# -eq 1 ]] && [[ $1 = "release" ]]; then
   rm -rf build
   mkdir build
-  cmake -S . -B build -D_VERSION_MAJOR=$VERSION_MAJOR -D_VERSION_MINOR=$VERSION_MINOR -D_VERSION_BUILD=$2 -DCMAKE_TOOLCHAIN_FILE=external/freertos/tools/cmake/toolchains/xtensa-esp32.cmake -G Ninja
+  cmake -S . -B build -D_VERSION_MAJOR=$VERSION_MAJOR -D_VERSION_MINOR=$VERSION_MINOR -D_VERSION_BUILD=$VERSION_BUILD -DIDF_SDKCONFIG_DEFAULTS=config/esp32/sdkconfig.release -DCMAKE_TOOLCHAIN_FILE=external/freertos/tools/cmake/toolchains/xtensa-esp32.cmake -G Ninja
+  cmake --build build
+  echo "You have build a release binary which will encrypt itself and make reflashing impossible!!!"
+  echo "Version is set to $VERSION_MAJOR.$VERSION_MINOR.$VERSION_BUILD"
+elif [[ $# -eq 2 ]] && [[ $1 = "buildtag" ]] && [[ "${2}" =~ ^[0-9]+$ ]]; then
+  rm -rf build
+  mkdir build
+  cmake -S . -B build -D_VERSION_MAJOR=$VERSION_MAJOR -D_VERSION_MINOR=$VERSION_MINOR -D_VERSION_BUILD=$2 -DIDF_SDKCONFIG_DEFAULTS=config/esp32/sdkconfig.dev -DCMAKE_TOOLCHAIN_FILE=external/freertos/tools/cmake/toolchains/xtensa-esp32.cmake -G Ninja
   cmake --build build
 elif [[ $# -eq 1 ]] && [[ $1 = "flash" ]]; then
   cmake --build build --target flash
@@ -38,15 +45,16 @@ elif [[ $# -eq 2 ]] && [[ $1 = "monitor" ]]; then
 elif [[ $# -eq 2 ]] && [[ $1 = "all" ]]; then
   rm -rf build
   mkdir build
-  cmake -S . -B build -D_DEBUG_PRINT_LEVEL=9 -D_VERSION_MAJOR=$VERSION_MAJOR -D_VERSION_MINOR=$VERSION_MINOR -D_VERSION_BUILD=$VERSION_BUILD -DIDF_SDK_CONFIG_DEFAULTS=config/esp32/sdkconfig.defaults -DCMAKE_TOOLCHAIN_FILE=external/freertos/tools/cmake/toolchains/xtensa-esp32.cmake -G Ninja
+  cmake -S . -B build -D_DEBUG_PRINT_LEVEL=9 -D_VERSION_MAJOR=$VERSION_MAJOR -D_VERSION_MINOR=$VERSION_MINOR -D_VERSION_BUILD=$VERSION_BUILD -DIDF_SDKCONFIG_DEFAULTS=config/esp32/sdkconfig.dev -DCMAKE_TOOLCHAIN_FILE=external/freertos/tools/cmake/toolchains/xtensa-esp32.cmake -G Ninja
   cmake --build build --target flash
   ./external/freertos/vendors/espressif/esp-idf/tools/idf.py monitor -p $2 -B build
 else
   echo "Unknown command! Usage:"
-  echo "./build.sh                 - compile"
-  echo "./build.sh release <build> - compile with provided build version"
-  echo "./build.sh flash           - flash"
-  echo "./build.sh monitor <port>  - monitor output"
-  echo "./build.sh erase           - erase flash"
-  echo "./build.sh all <port>      - builds with max highest debug resolution, flashes and starts monitoring"
+  echo "./build.sh                  - compile"
+  echo "./build.sh release          - "
+  echo "./build.sh buildtag <build> - compile with provided build version"
+  echo "./build.sh flash            - flash"
+  echo "./build.sh monitor <port>   - monitor output"
+  echo "./build.sh erase            - erase flash"
+  echo "./build.sh all <port>       - builds with max highest debug resolution, flashes and starts monitoring"
 fi
