@@ -9,6 +9,7 @@ This project-part implements the Eye unit (imagination!) controlling the camera.
 - AWS IoT MQTT based periodic camera upload
 - AWS IoT MQTT based periodic diagnostic message upload
 - AWS IoT MQTT based control interface for receiving commands
+- BLE connection for setting up WiFi
 
 ## Prerequsites
 
@@ -48,7 +49,20 @@ The FSU-Eye needs some credentials in order to work, as it is intended to connec
 
 #### WiFi
 
-The FSU-Eye needs to connect to the local WiFi in order to operate correctly, in order to this the appropriate WiFi seetings needs to be provided. The programmer needs to edit the file config/wifi/fsu_eye_wifi_credentials.h with appropriate values, mainly for SSID and password, but in case other settings for your local WiFi differs from default, change these too.
+The FSU-Eye needs to connect to the local WiFi in order to operate correctly, in order to this the appropriate WiFi seetings needs to be provided. The programmer can either populate Network Credentials through BLE, or needs to edit the file config/wifi/fsu_eye_wifi_credentials.h with appropriate values, mainly for SSID and password, but in case other settings for your local WiFi differs from default, change these too.
+
+##### BLE
+
+The FSU-Eye will upon every bootup enable the BLE interface for 3 minutes, during which the user can connect to the WiFi credential service and write the the SSID and Password Characteristics. The user should be aware that in order for the device to use the new credentials the device needs either be rebooted, or be issued a command over AWS to restart the WiFi.
+
+The custom UUIDs are as follows:
+
+| BLE Entity | UUID |
+|---------|----------------|
+|   Wifi Credential Service   |      0x42e84d84321b467093ca577fba712eed       |
+|   SSID   |      0x10b5       |
+|   Password   |      0x13db       |
+
 
 #### AWS
 

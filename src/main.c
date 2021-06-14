@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include "xtensa/core-macros.h"
 #include "fe_sys.h"
+#include "fe_ble.h"
 #include "system_controller.h"
 #include "kvs_service.h"
 #include "wifi_service.h"
@@ -160,6 +161,14 @@ int app_main()
 
   // Initialize AWS IoT SDK
   IotSdk_Init();
+
+  FE_BLE_init();
+
+  // Create a detached thread for shutting down BLE
+  Iot_CreateDetachedThread(FE_BLE_shutdown_runner,
+                           NULL,
+                           EYE_APP_TASK_PRIORITY,
+                           EYE_APP_STACKSIZE);
 
   // Initialize the System Controller
   SC_init();
