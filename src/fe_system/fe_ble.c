@@ -33,6 +33,8 @@
 #include "iot_ble_config.h"
 #include "iot_ble.h"
 
+#define LOG_TAG                                 "FE BLE"
+
 #define FE_BLE_UPTIME                           (1000 * 60 * 3) // 3 minutes
 
 #define WIFI_CREDENTIAL_SERVICE_UUID            { 0x42, 0xe8, 0x4d, 0x84, 0x32, 0x1b, 0x46, 0x70, 0x93, 0xca, 0x57, 0x7f, 0xba, 0x71, 0x2e, 0xed }
@@ -138,7 +140,7 @@ static void _wifiSSIDCallback(IotBleAttributeEvent_t * pEventParam)
       kvs_ssid.value_len = write_param->length;
       memcpy(kvs_ssid.value, write_param->pValue, write_param->length);
       SC_send_cmd(sc_service_kvs, KVS_SERVICE_CMD_PUT_KEY_VALUE, &kvs_ssid);
-      ESP_LOGI("FE BLE", "Writing wifi ssid %s, of length %u\n", kvs_ssid.value, write_param->length);
+      ESP_LOGI(LOG_TAG, "Writing wifi ssid %s, of length %u\n", kvs_ssid.value, write_param->length);
 
       resp.eventStatus = eBTStatusSuccess;
       attr_data.pData = write_param->pValue;
@@ -153,7 +155,7 @@ static void _wifiSSIDCallback(IotBleAttributeEvent_t * pEventParam)
     memset(&kvs_ssid, '\0', sizeof(kvs_ssid));
     kvs_ssid.key = kvs_entry_wifi_ssid;
     SC_send_cmd(sc_service_kvs, KVS_SERVICE_CMD_GET_KEY_VALUE, &kvs_ssid);
-    ESP_LOGI("FE BLE", "Reading wifi ssid %s, of length %u\n", kvs_ssid.value, kvs_ssid.value_len);
+    ESP_LOGI(LOG_TAG, "Reading wifi ssid %s, of length %u\n", kvs_ssid.value, kvs_ssid.value_len);
 
     attr_data.handle = pEventParam->pParamRead->attrHandle;
     attr_data.pData = (uint8_t*) kvs_ssid.value;
@@ -188,7 +190,7 @@ static void _wifiPasswordCallback(IotBleAttributeEvent_t * pEventParam)
       kvs_password.value_len = write_param->length;
       memcpy(kvs_password.value, write_param->pValue, write_param->length);
       SC_send_cmd(sc_service_kvs, KVS_SERVICE_CMD_PUT_KEY_VALUE, &kvs_password);
-      ESP_LOGI("FE BLE", "Writing wifi password %s, of length %u\n", kvs_password.value, write_param->length);
+      ESP_LOGI(LOG_TAG, "Writing wifi password %s, of length %u\n", kvs_password.value, write_param->length);
 
       resp.eventStatus = eBTStatusSuccess;
       attr_data.pData = write_param->pValue;
@@ -202,7 +204,7 @@ static void _wifiPasswordCallback(IotBleAttributeEvent_t * pEventParam)
 
 void IotBle_SetCustomAdvCb( IotBleAdvertisementParams_t * pAdvParams,  IotBleAdvertisementParams_t * pScanParams)
 {
-  ESP_LOGI("FE BLE", "Setting Advertisment Data\n");
+  ESP_LOGI(LOG_TAG, "Setting Advertisment Data\n");
 
   memset(pAdvParams, 0, sizeof(IotBleAdvertisementParams_t));
   memset(pScanParams, 0, sizeof(IotBleAdvertisementParams_t));
@@ -216,7 +218,7 @@ void IotBle_SetCustomAdvCb( IotBleAdvertisementParams_t * pAdvParams,  IotBleAdv
 
 void IotBle_AddCustomServicesCb( void )
 {
-  ESP_LOGI("FE BLE", "Creating BLE Services\n");
+  ESP_LOGI(LOG_TAG, "Creating BLE Services\n");
   IotBle_CreateService((BTService_t*) &_wifiCredentialsService, (IotBleAttributeEventCallback_t*) pxCallBackArray);
 }
 

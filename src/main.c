@@ -47,6 +47,7 @@
 
 #include <esp_http_server.h>
 
+#define LOG_TAG                   "FSU EYE"
 
 // EYE App configs
 #define EYE_APP_TASK_PRIORITY     (tskIDLE_PRIORITY + 5U)
@@ -99,7 +100,7 @@ static void eye_app(void * pArgument)
     // so just check base case
     if ((info_freq = strtoull(freq_entry.value, NULL, 10)) <= 0)
     {
-      ESP_LOGI("FSU_EYE", "Error on fetching Info Report Frequency from KVS\n");
+      ESP_LOGI(LOG_TAG, "Error on fetching Info Report Frequency from KVS\n");
       info_freq = UINT64_MAX;
     }
 
@@ -125,7 +126,7 @@ static void eye_app(void * pArgument)
       publish_msg.msg = publish_info_msg;
       publish_msg.msg_len = strlen(EYE_APP_PUBLISH_INFO);
 
-      ESP_LOGI("FSU_EYE", "Sending Info!\n");
+      ESP_LOGI(LOG_TAG, "Sending Info!\n");
       SC_send_cmd(sc_service_aws, AWS_SERVICE_CMD_MQTT_PUBLISH_MESSAGE, &publish_msg);
       last_time_message = esp_timer_get_time();
     }
@@ -138,13 +139,13 @@ static void eye_app(void * pArgument)
     // so just check base case
     if ((image_freq = strtoull(freq_entry.value, NULL, 10)) <= 0)
     {
-      ESP_LOGI("FSU_EYE", "Error on fetching Image Report Frequency from KVS\n");
+      ESP_LOGI(LOG_TAG, "Error on fetching Image Report Frequency from KVS\n");
       image_freq = UINT64_MAX;
     }
 
     if (current_tic - last_time_camera > MICROSECONDS * image_freq)
     {
-      ESP_LOGI("FSU_EYE", "Taking Picture!\n");
+      ESP_LOGI(LOG_TAG, "Taking Picture!\n");
       SC_send_cmd(sc_service_camera, CAM_SERVICE_CMD_CAPTURE_SEND_IMAGE, NULL);
       last_time_camera = esp_timer_get_time();
     }

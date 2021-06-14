@@ -49,6 +49,9 @@
 
 #include "iot_appversion32.h"
 
+#define LOG_TAG                       "AWS SERVICE"
+#define LOG_TAG_OTA                   "AWS SERVICE OTA"
+
 #define FSU_EYE_NETWORK_INTERFACE     IOT_NETWORK_INTERFACE_AFR
 #define FSU_EYE_AWS_IOT_ALPN_MQTT     "x-amzn-mqtt-ca"
 
@@ -149,7 +152,7 @@ static int AWS_SERVICE_PKCS11_provision_key(void)
   provision_params.ulClientCertificateLength = sizeof(FSU_EYE_AWS_CLIENT_CERT);
   provision_params.ulJITPCertificateLength = 0;
 
-  ESP_LOGI("AWS_SERVICE", "PKCS11 PrKey strlen & size: %d - %d.\n", sizeof(FSU_EYE_AWS_PRIVATE_KEY), strlen(FSU_EYE_AWS_PRIVATE_KEY));
+  ESP_LOGI(LOG_TAG, "PKCS11 PrKey strlen & size: %d - %d.\n", sizeof(FSU_EYE_AWS_PRIVATE_KEY), strlen(FSU_EYE_AWS_PRIVATE_KEY));
 
   if (vAlternateKeyProvisioning(&provision_params) != CKR_OK)
   {
@@ -198,14 +201,14 @@ static int AWS_SERVICE_deinit()
 static void _publish_complete_callback(void *param1,
                                        IotMqttCallbackParam_t *const param)
 {
-  ESP_LOGI("AWS_SERVICE", "MQTT publish complete!\n");
+  ESP_LOGI(LOG_TAG, "MQTT publish complete!\n");
   _publish_complete = 1;
 }
 
 static void _mqtt_subscription_callback(void *param1,
                                        IotMqttCallbackParam_t *const param)
 {
-  ESP_LOGI("AWS_SERVICE", "MQTT subscribe received: %.*s\n", param->u.message.info.payloadLength,
+  ESP_LOGI(LOG_TAG, "MQTT subscribe received: %.*s\n", param->u.message.info.payloadLength,
                                                              (const char*) param->u.message.info.pPayload);
 
   if (strncmp(FSU_EYE_SUBSCRIBE_COMMAND, param->u.message.info.pTopicName, param->u.message.info.topicNameLength) == 0)
@@ -213,7 +216,7 @@ static void _mqtt_subscription_callback(void *param1,
     memset(&rx_cmd, 0, sizeof(cp_fsu_service_argument_t));
     if (CP_parse_upstream_json(&rx_cmd, param->u.message.info.pPayload, param->u.message.info.payloadLength) != EXIT_SUCCESS)
     {
-      ESP_LOGI("AWS_SERVICE", "Failed to parse upsteam command\n");
+      ESP_LOGI(LOG_TAG, "Failed to parse upsteam command\n");
     }
 
     switch (rx_cmd.sid)
@@ -223,17 +226,17 @@ static void _mqtt_subscription_callback(void *param1,
         break;
 
       default:
-        ESP_LOGI("AWS_SERVICE", "Service ID not supported for remote access\n");
+        ESP_LOGI(LOG_TAG, "Service ID not supported for remote access\n");
     }
 
-    ESP_LOGI("AWS_SERVICE", "Upstream command processed and done\n");
+    ESP_LOGI(LOG_TAG, "Upstream command processed and done\n");
   }
 }
 
 static void _mqtt_disconnected_callback(void *param1,
                                        IotMqttCallbackParam_t *const param)
 {
-  ESP_LOGI("AWS_SERVICE", "MQTT disconnection!\n");
+  ESP_LOGI(LOG_TAG, "MQTT disconnection!\n");
   _connected = 0;
 }
 
@@ -264,7 +267,7 @@ static int AWS_SERVICE_subscribe(IotMqttConnection_t mqtt_connection,
   switch(subscription_status)
   {
     case IOT_MQTT_SUCCESS:
-      ESP_LOGI("AWS_SERVICE", "Subscription succeeded!");
+      ESP_LOGI(LOG_TAG, "Subscription succeeded!");
       break;
 
     case IOT_MQTT_SERVER_REFUSED:
@@ -277,7 +280,7 @@ static int AWS_SERVICE_subscribe(IotMqttConnection_t mqtt_connection,
                                 subscriptions[i].topicFilterLength,
                                 NULL) == false)
         {
-          ESP_LOGE("AWS_SERVICE", "Topic filter %.*s was rejected.",
+          ESP_LOGE(LOG_TAG, "Topic filter %.*s was rejected.",
                         subscriptions[i].topicFilterLength,
                         subscriptions[i].pTopicFilter);
         }
@@ -339,7 +342,7 @@ static int AWS_SERVICE_publish_image(image_info_t *image_info)
 
   if (NULL == image_info)
   {
-    ESP_LOGW("AWS_SERVICE", "Provided image was NULL.\n");
+    ESP_LOGW(LOG_TAG, "Provided image was NULL.\n");
     return EXIT_FAILURE;
   }
 
@@ -363,13 +366,13 @@ static int AWS_SERVICE_publish_info(message_info_t *info)
 
   if (NULL == info)
   {
-    ESP_LOGW("AWS_SERVICE", "Could not create publish info message, NULL input.\n");
+    ESP_LOGW(LOG_TAG, "Could not create publish info message, NULL input.\n");
     return EXIT_FAILURE;
   }
 
   if ((EYE_PUBLISH_MAX_LEN - (sizeof(EYE_INFO_MSG) - strlen(EYE_MSG_ID_FORMAT) - strlen(EYE_MSG_INFO_FORMAT))) < info->msg_len)
   {
-    ESP_LOGE("AWS_SERVICE", "Could not create publish info message, input too large.\n");
+    ESP_LOGE(LOG_TAG, "Could not create publish info message, input too large.\n");
     return EXIT_FAILURE;
   }
 
@@ -433,7 +436,7 @@ static int AWS_SERVICE_mqtt_connect()
   connect_info.clientIdentifierLength = strlen(FSU_EYE_AWS_IOT_THING_NAME);
 
   // Open MQTT connection
-  ESP_LOGI("AWS_SERVICE", "Establishing MQTT Connection!\n");
+  ESP_LOGI(LOG_TAG, "Establishing MQTT Connection!\n");
   connect_status = IotMqtt_Connect(&network_info,
                                    &connect_info,
                                    MQTT_TIMEOUT_MS,
@@ -441,12 +444,12 @@ static int AWS_SERVICE_mqtt_connect()
 
   if (IOT_MQTT_SUCCESS != connect_status)
   {
-    ESP_LOGI("AWS_SERVICE", "MQTT Connection Failed!\n");
+    ESP_LOGI(LOG_TAG, "MQTT Connection Failed!\n");
     return EXIT_FAILURE;
   }
 
   _connected = 1;
-  ESP_LOGI("AWS_SERVICE", "MQTT Connected!\n");
+  ESP_LOGI(LOG_TAG, "MQTT Connected!\n");
 
   return EXIT_SUCCESS;
 }
@@ -493,11 +496,11 @@ static int AWS_SERVICE_recv_msg(uint8_t cmd, void* arg)
 
 static void OTA_complete_callback(OTA_JobEvent_t event)
 {
-  ESP_LOGI("AWS SERVICE OTA", "Complete callback with %u\n", event);
+  ESP_LOGI(LOG_TAG_OTA, "Complete callback with %u\n", event);
 
   if (event == eOTA_JobEvent_Activate)
   {
-    ESP_LOGI("AWS SERVICE OTA", "Received eOTA_JobEvent_Activate callback from OTA Agent.\n");
+    ESP_LOGI(LOG_TAG_OTA, "Received eOTA_JobEvent_Activate callback from OTA Agent.\n");
 
     // OTA job is completed, so we disconnect here before rebooting
     if(_mqtt_connection != NULL)
@@ -515,15 +518,15 @@ static void OTA_complete_callback(OTA_JobEvent_t event)
   }
   else if (event == eOTA_JobEvent_Fail)
   {
-    ESP_LOGI("AWS SERVICE OTA", "Received eOTA_JobEvent_Fail callback from OTA Agent.\n");
+    ESP_LOGI(LOG_TAG_OTA, "Received eOTA_JobEvent_Fail callback from OTA Agent.\n");
   }
   else if (event == eOTA_JobEvent_StartTest)
   {
-    ESP_LOGI("AWS SERVICE OTA", "Attempting to set image to Verified\n" );
+    ESP_LOGI(LOG_TAG_OTA, "Attempting to set image to Verified\n" );
 
     if (OTA_SetImageState(eOTA_ImageState_Accepted) != kOTA_Err_None)
     {
-      ESP_LOGI("AWS SERVICE OTA", "Error! Failed to set image state as accepted.\n" );
+      ESP_LOGI(LOG_TAG_OTA, "Error! Failed to set image state as accepted.\n" );
     }
   }
 }

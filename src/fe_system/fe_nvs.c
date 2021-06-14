@@ -31,6 +31,8 @@
 
 #include "esp_log.h"
 
+#define LOG_TAG     "FE NVS"
+
 static uint8_t _initialized = 0;
 
 int FE_NVS_init()
@@ -44,7 +46,7 @@ int FE_NVS_init()
 
   if(ESP_OK != ret)
   {
-    ESP_LOGW("FE NVS", "Erasing nvs flash, and reinit, due to %d\n", ret);
+    ESP_LOGW(LOG_TAG, "Erasing nvs flash, and reinit, due to %d\n", ret);
 
     ESP_ERROR_CHECK(nvs_flash_erase());
     ret = nvs_flash_init();
@@ -117,7 +119,7 @@ int FE_NVS_read_key_value(const char *section, const char *key, uint8_t *data, s
   esp_err_t err = ESP_OK;
   if ((err = nvs_get_blob(hnvs, key, NULL, &required_sz)) != ESP_OK)
   {
-    ESP_LOGI("FE NVS", "Read error due to %d\n", err);
+    ESP_LOGI(LOG_TAG, "Read error due to %d\n", err);
     return EXIT_FAILURE;
   }
 
@@ -153,7 +155,7 @@ int FE_NVS_verify_key(const char *section, const char *key)
   esp_err_t err = ESP_OK;
   if ((err = nvs_get_blob(hnvs, key, NULL, &required_sz)) != ESP_OK)
   {
-    ESP_LOGI("FE NVS", "Verify read error due to %d\n", err);
+    ESP_LOGI(LOG_TAG, "Verify read error due to %d\n", err);
     return EXIT_FAILURE;
   }
 
