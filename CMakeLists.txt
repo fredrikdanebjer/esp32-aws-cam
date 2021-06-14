@@ -19,6 +19,7 @@ file(GLOB SOURCES
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
 set(INCLUDE_DIRS ${INCLUDE_DIRS}
+        "config/bt"
         "config/aws"
         "config/wifi"
         "config/http_server"
@@ -56,6 +57,7 @@ list(APPEND IDF_EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS})
 add_subdirectory("external/freertos")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
+        AFR::ble
         AFR::wifi
         AFR::utils
         AFR::common
