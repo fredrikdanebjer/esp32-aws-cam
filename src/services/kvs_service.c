@@ -39,6 +39,8 @@
 
 #include "fsu_eye_kvs_defaults.h"
 
+#define LOG_TAG                   "KVS SERVICE"
+
 #define KVS_NAMESPACE             "KVS"
 
 #define KVS_MAX_CHARS_IN_ENTRIES  (1U)
@@ -78,7 +80,7 @@ int _validate_string_as_uint64(const char *str)
     || '\0' != *end
     || ERANGE == errno)
   {
-    ESP_LOGI("KVS SERVICE", "Provided string <%s> is not an uint\n", str);
+    ESP_LOGI(LOG_TAG, "Provided string <%s> is not an uint\n", str);
     return 0;
   }
   return 1;
@@ -98,7 +100,7 @@ static int KVS_SERVICE_validate_type(kvs_entry_t *entry)
     }
     return 1;
   }
-  ESP_LOGI("KVS SERVICE", "Provided entry has unknown type\n");
+  ESP_LOGI(LOG_TAG, "Provided entry has unknown type\n");
 
   return 0;
 }
@@ -199,7 +201,7 @@ static void KVS_SERVICE_init_store()
     {
       if (KVS_SERVICE_get_value_from_nvs(&entry) != EXIT_SUCCESS)
       {
-        ESP_LOGI("KVS SERVICE", "Failure to load from NVS at element %u\n", i);
+        ESP_LOGI(LOG_TAG, "Failure to load from NVS at element %u\n", i);
       }
       memcpy(_ram_kv_store[i], entry.value, strlen(entry.value));
     }
@@ -210,15 +212,15 @@ static void KVS_SERVICE_init_store()
 
       if (KVS_SERVICE_put_value(&entry) != EXIT_SUCCESS)
       {
-        ESP_LOGI("KVS SERVICE", "Failure to initialize default NVS KVS at element %u\n", i);
+        ESP_LOGI(LOG_TAG, "Failure to initialize default NVS KVS at element %u\n", i);
       }
     }
   }
 #if defined(DEBUG_KVS)
-  ESP_LOGI("KVS SERVICE", "KVS RAM Store:\n");
+  ESP_LOGI(LOG_TAG, "KVS RAM Store:\n");
   for (uint8_t i = 0; i < kvs_entry_count; ++i)
   {
-    ESP_LOGI("KVS SERVICE", "[%u]:%s\n", i, _ram_kv_store[i]);
+    ESP_LOGI(LOG_TAG, "[%u]:%s\n", i, _ram_kv_store[i]);
   }
 #endif
 }
@@ -240,7 +242,7 @@ static int KVS_SERVICE_init()
 
   if (FE_NVS_init() != EXIT_SUCCESS)
   {
-    ESP_LOGI("KVS SERVICE", "Could not initialize NVS library\n");
+    ESP_LOGI(LOG_TAG, "Could not initialize NVS library\n");
 
     return EXIT_FAILURE;
   }

@@ -65,7 +65,7 @@
 
 #define EYE_SUBSCRIBE_MAX_TOKENS      (0x10U)
 
-#define LOG_TAG     "COMMAND_PARSER"
+#define LOG_TAG     "COMMAND PARSER"
 
 // JSON Helper function, to check if a token is a sought after string
 static int _jsoneq(const char *json, jsmntok_t *tok, const char *s)

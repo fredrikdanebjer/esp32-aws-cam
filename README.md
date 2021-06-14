@@ -143,5 +143,4 @@ https://randomnerdtutorials.com/esp32-cam-video-streaming-face-recognition-ardui
 ## TODO / Wanted list
 - Doxygen
 - Add a command-list to process in System Controller which it polls, callback should not do heavy processing
-- WiFi setup over BLE
 - Architecture doc

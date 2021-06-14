@@ -36,6 +36,8 @@
 
 #include "semphr.h"
 
+#define LOG_TAG     "CAMERA SERVICE"
+
 // ESP32-S Camera Pins
 #define CAM_PIN_PWDN 32
 #define CAM_PIN_RESET -1 //software reset will be performed
@@ -111,7 +113,7 @@ static int CAM_SERVICE_camera_init()
 
   if ((err = esp_camera_init(&camera_config)) != ESP_OK)
   {
-    ESP_LOGI("CAM_SERVICE", "Camera init failed with %d\n", err);
+    ESP_LOGI(LOG_TAG, "Camera init failed with %d\n", err);
     return EXIT_FAILURE;
   }
 
@@ -163,7 +165,7 @@ static esp_err_t http_server_handler(httpd_req_t *req)
       fb = esp_camera_fb_get();
       if (!fb)
       {
-        ESP_LOGI("CAM_SERVICE", "Camera capture failed");
+        ESP_LOGI(LOG_TAG, "Camera capture failed");
         res = ESP_FAIL;
       }
       else
@@ -244,7 +246,7 @@ static int CAM_SERVICE_http_server_start()
     .user_ctx  = NULL
   };
 
-  ESP_LOGI("CAM_SERVICE", "Starting http server on port: '%d'\n", config.server_port);
+  ESP_LOGI(LOG_TAG, "Starting http server on port: '%d'\n", config.server_port);
   if (httpd_start(&httpd_handle, &config) == ESP_OK) {
     httpd_register_uri_handler(httpd_handle, &index_uri);
   }
@@ -263,7 +265,7 @@ static int CAM_SERVICE_send_camera_capture()
 
     if (!fb)
     {
-      ESP_LOGI("CAM_SERVICE", "Capture failed to acquire frame\n");
+      ESP_LOGI(LOG_TAG, "Capture failed to acquire frame\n");
       xSemaphoreGive(_camera_mutex);
       return EXIT_FAILURE;
     }
@@ -274,7 +276,7 @@ static int CAM_SERVICE_send_camera_capture()
     image.height = fb->height;
     image.format = (uint8_t) fb->format;
 
-    ESP_LOGI("CAM_SERVICE", "Sending Picture\n");
+    ESP_LOGI(LOG_TAG, "Sending Picture\n");
     SC_send_cmd(sc_service_aws, AWS_SERVICE_CMD_MQTT_PUBLISH_IMAGE, &image);
 
     //return the frame buffer back to the driver for reuse
